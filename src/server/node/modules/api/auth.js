@@ -78,11 +78,9 @@ module.exports.login = function(instance, http, resolve, reject) {
     instance.AUTH.login(instance, http, res, rej);
   }).then(function(userData) {
     if ( typeof userData.groups === 'undefined' ) {
-      new Promise(function(res, rej) {
-        instance.STORAGE.getGroups(instance, http, function(groups) {
-          userData.groups = groups;
-          _proceed(userData);
-        });
+      instance.STORAGE.getGroups(instance, http, function(groups) {
+        userData.groups = groups;
+        _proceed(userData);
       });
     } else {
       _proceed(userData);

@@ -13,7 +13,8 @@
     "unescape": true,
     "EventTarget": true,
     "Uint8Array": true,
-    "ArrayBuffer": true
+    "ArrayBuffer": true,
+    "Promise": true
   },
   "rules": {
     "brace-style": 2,

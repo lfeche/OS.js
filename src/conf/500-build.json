@@ -79,6 +79,7 @@
       "src/client/javascript/handler.js",
       "src/client/javascript/connections/http.js",
       "src/client/javascript/connections/ws.js",
+      "src/client/javascript/connections/nw.js",
       "src/client/javascript/auth/demo.js",
       "src/client/javascript/auth/mysql.js",
       "src/client/javascript/auth/pam.js",

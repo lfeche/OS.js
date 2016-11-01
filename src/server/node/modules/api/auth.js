@@ -59,7 +59,7 @@ module.exports.login = function(instance, http, resolve, reject) {
     }).then(function(userSettings) {
 
       new Promise(function(res, rej) {
-        instance.STORAGE.getSettings(instance, http, res, rej);
+        instance.STORAGE.getBlacklist(instance, http, res, rej);
       }).then(function(blacklist) {
         http.session.set('username', userData.username);
         http.session.set('groups', JSON.stringify(userData.groups));

@@ -72,20 +72,6 @@
   function Connection(handler) {
     this.index = 0;
     this.handler = handler;
-    this.nw = null;
-    this.ws = null;
-
-    if ( (API.getConfig('Connection.Type') === 'nw') ) {
-      this.nw = require('osjs').init({
-        root: process.cwd(),
-        settings: {
-          mimes: API.getConfig('MIME.mapping')
-        },
-        nw: true
-      });
-    }
-
-    this.wsqueue = {};
   }
 
   /**
@@ -95,44 +81,7 @@
    * @memberof OSjs.Core.Connection#
    */
   Connection.prototype.init = function(callback) {
-    var self = this;
-
-    if ( API.getConfig('Connection.Type') === 'ws' ) {
-      var url = window.location.protocol.replace('http', 'ws') + '//' + window.location.host;
-      var connected = false;
-
-      console.info('Using WebSocket', url);
-
-      this.ws = new WebSocket(url);
-
-      this.ws.onopen = function() {
-        connected = true;
-
-        callback();
-      };
-
-      this.ws.onmessage = function(ev) {
-        var data = JSON.parse(ev.data);
-        var idx = data._index;
-
-        if ( self.wsqueue[idx] ) {
-          delete data._index;
-
-          self.wsqueue[idx](data);
-
-          delete self.wsqueue[idx];
-        }
-      };
-
-      this.ws.onclose = function(ev) {
-        if ( !connected && ev.code !== 3001 ) {
-          callback('WebSocket connection error'); // FIXME: Locale
-        }
-      };
-
-    } else {
-      callback();
-    }
+    callback();
   };
 
   /**
@@ -142,13 +91,7 @@
    * @memberof OSjs.Core.Connection#
    */
   Connection.prototype.destroy = function() {
-    if ( this.ws ) {
-      this.ws.close();
-    }
-
-    this.nw = null;
-    this.ws = null;
-    this._wsRequest = {};
+    this.handler = null;
   };
 
   /**
@@ -248,81 +191,26 @@
   };
 
   /**
-   * Makes a WebSocket call
-   *
-   * @function callWS
-   * @memberof OSjs.Core.Connection#
-   *
-   * @return {Boolean}
-   */
-  Connection.prototype.callWS = function(path, args, options, onsuccess, onerror) {
-    onerror = onerror || function() {
-      console.warn('Connection::callWS()', 'error', arguments);
-    };
-
-    var idx = this.index++;
-
-    try {
-      this.ws.send(JSON.stringify({
-        _index: idx,
-        sid: Utils.getCookie('session'),
-        path: '/' + path,
-        args: args
-      }));
-
-      this.wsqueue[idx] = onsuccess || function() {};
-
-      return true;
-    } catch ( e ) {
-      console.warn('callWS() Warning', e.stack, e);
-      onerror(e);
-    }
-
-    return false;
-  };
-
-  /**
-   * Makes a Node NW call
-   *
-   * @function callNW
-   * @memberof OSjs.Core.Connection#
-   *
-   * @return {Boolean}
-   */
-  Connection.prototype.callNW = function(method, args, options, onsuccess, onerror) {
-    onerror = onerror || function() {
-      console.warn('Connection::callNW()', 'error', arguments);
-    };
-
-    try {
-      this.nw.request(method.match(/^FS\:/) !== null, method.replace(/^FS\:/, ''), args, function(err, res) {
-        onsuccess({error: err, result: res});
-      });
-
-      return true;
-    } catch ( e ) {
-      console.warn('callNW() Warning', e.stack, e);
-      onerror(e);
-    }
-
-    return false;
-  };
-
-  /**
-   * Wrapper for OS.js API calls
+   * Perform a HTTP Request
    *
    * @function request
    * @memberof OSjs.Core.Connection#
    *
    * @return {Boolean}
    */
-  Connection.prototype.request = function(isVfs, method, args, options, onsuccess, onerror) {
+  Connection.prototype.request = function(url, args, options, onsuccess, onerror) {
+    return this.callXHR(url, args, options, onsuccess, onerror);
+  };
 
-    // Proxy all requests to NW module if required
-    if ( API.getConfig('Connection.Type') === 'nw' ) {
-      return this.callNW(method, args, options, onsuccess, onerror);
-    }
-
+  /**
+   * Wrapper for OS.js API calls
+   *
+   * @function _request
+   * @memberof OSjs.Core.Connection#
+   *
+   * @return {Boolean}
+   */
+  Connection.prototype._request = function(isVfs, method, args, options, onsuccess, onerror) {
     // Some methods can only be handled via HTTP
     if ( isVfs ) {
       if ( method === 'FS:get' ) {
@@ -340,11 +228,7 @@
       return API.getConfig('Connection.APIURI') + '/' + method;
     })();
 
-    if ( API.getConfig('Connection.Type') === 'ws' ) {
-      return this.callWS(url, args, options, onsuccess, onerror);
-    }
-
-    return this.callXHR(url, args, options, onsuccess, onerror);
+    return this.request(url, args, options, onsuccess, onerror);
   };
 
   /////////////////////////////////////////////////////////////////////////////

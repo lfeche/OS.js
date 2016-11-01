@@ -31,82 +31,38 @@
 (function(API, Utils, Connection) {
   'use strict';
 
-  function WSConnection() {
+  function NWConnection() {
     Connection.apply(this, arguments);
 
-    this.ws = null;
-    this.wsqueue = {};
+    this.nw = require('osjs').init({
+      root: process.cwd(),
+      settings: {
+        mimes: API.getConfig('MIME.mapping')
+      },
+      nw: true
+    });
   }
 
-  WSConnection.prototype = Object.create(Connection.prototype);
-  WSConnection.constructor = Connection;
+  NWConnection.prototype = Object.create(Connection.prototype);
+  NWConnection.constructor = Connection;
 
-  WSConnection.prototype.destroy = function() {
-    if ( this.ws ) {
-      this.ws.close();
-    }
-
-    this.ws = null;
-    this.wsqueue = {};
+  NWConnection.prototype.destroy = function() {
+    this.nw = null;
     return Connection.prototype.destroy.apply(this, arguments);
   };
 
-  WSConnection.prototype.init = function(callback) {
-    var self = this;
-    var url = window.location.protocol.replace('http', 'ws') + '//' + window.location.host;
-    var connected = false;
-
-    console.info('Using WebSocket', url);
-
-    this.ws = new WebSocket(url);
-
-    this.ws.onopen = function() {
-      connected = true;
-
-      callback();
-    };
-
-    this.ws.onmessage = function(ev) {
-      var data = JSON.parse(ev.data);
-      var idx = data._index;
-
-      if ( self.wsqueue[idx] ) {
-        delete data._index;
-
-        self.wsqueue[idx](data);
-
-        delete self.wsqueue[idx];
-      }
-    };
-
-    this.ws.onclose = function(ev) {
-      if ( !connected && ev.code !== 3001 ) {
-        callback('WebSocket connection error'); // FIXME: Locale
-      }
-    };
-
-  };
-
-  WSConnection.prototype.request = function(path, args, options, onsuccess, onerror) {
+  NWConnection.prototype._request = function(isVfs, method, args, options, onsuccess, onerror) {
     onerror = onerror || function() {
-      console.warn('Connection::callWS()', 'error', arguments);
+      console.warn('NWConnection::request()', 'error', arguments);
     };
-
-    var idx = this.index++;
 
     try {
-      this.ws.send(JSON.stringify({
-        _index: idx,
-        sid: Utils.getCookie('session'),
-        path: '/' + path,
-        args: args
-      }));
-
-      this.wsqueue[idx] = onsuccess || function() {};
-
+      this.nw.request(method.match(/^FS\:/) !== null, method.replace(/^FS\:/, ''), args, function(err, res) {
+        onsuccess({error: err, result: res});
+      });
       return true;
     } catch ( e ) {
-      console.warn('callWS() Warning', e.stack, e);
+      console.warn('NWConnection::request() Warning', e.stack, e);
       onerror(e);
     }
 
@@ -118,6 +74,6 @@
   /////////////////////////////////////////////////////////////////////////////
 
   OSjs.Connections = OSjs.Connections || {};
-  OSjs.Connections.ws = WSConnection;
+  OSjs.Connections.nw = NWConnection;
 
 })(OSjs.API, OSjs.Utils, OSjs.Core.Connection);

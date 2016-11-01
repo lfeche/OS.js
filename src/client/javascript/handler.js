@@ -409,7 +409,7 @@
    * @return {Boolean}
    */
   Handler.prototype._callAPI = function(method, args, options, cbSuccess, cbError) {
-    return this.connection.request(false, method, args, options, cbSuccess, cbError);
+    return this.connection._request(false, method, args, options, cbSuccess, cbError);
   };
 
   /**
@@ -422,7 +422,7 @@
    * @return {Boolean}
    */
   Handler.prototype._callVFS = function(method, args, options, cbSuccess, cbError) {
-    return this.connection.request(true, method, args, options, cbSuccess, cbError);
+    return this.connection._request(true, method, args, options, cbSuccess, cbError);
   };
 
   //

@@ -37,7 +37,6 @@ function _readFile(username, path, resolve) {
   }
 
   _fs.readFile(path, function(err, data) {
-    console.warn(username, path, err, data);
     if ( err ) {
       _done(null);
     } else {

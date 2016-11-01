@@ -38,15 +38,46 @@ use Exception;
 abstract class Filesystem
 {
   const TRANSPORT = 'filesystem';
+  const DATE_FORMAT = "Y-m-d\TH:i:s.Z\Z";
 
-  final protected static function getRealPath($path) {
+  final protected static function _getFileMetadata($filename, $vroot, $path) {
+    $type = @is_dir($path) ? 'dir' : 'file';
+    $mime = '';
+    $size = 0;
+
+    if ( ($mtime = @filemtime($path)) > 0 ) {
+      $mtime = date(self::DATE_FORMAT, $mtime);
+    }
+    if ( ($ctime = @filectime($path)) > 0 ) {
+      $ctime = date(self::DATE_FORMAT, $ctime);
+    }
+
+    if ( $type === 'file' ) {
+      if ( is_writable($path) || is_readable($path) ) {
+        $mime = Utils::getMIME($path);
+        $size = filesize($path);
+      }
+    }
+
+    return [
+      'filename' => htmlspecialchars($filename),
+      'path' => htmlspecialchars($vroot . '/' . $filename),
+      'size' => $size ?: 0,
+      'type' => $type,
+      'mime' => $mime,
+      'ctime' => $ctime ?: null,
+      'mtime' => $mtime ?: null
+    ];
+  }
+
+  final protected static function _getRealPath($path) {
     $parts = explode(':', $path, 2);
     $protocol = $parts[0];
     $mounts = (array) (INSTANCE::getConfig()->vfs->mounts ?: []);
 
     $replacements = [
       '%UID%' => isset($_SESSION['username']) ? $_SESSION['username'] : -1,
-      '%USERNAME' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
+      '%USERNAME%' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
       '%DROOT%' => DIR_ROOT,
       '%DIST%' => Instance::getDist(),
       '%MOUNTPOINT%' => $protocol
@@ -69,11 +100,11 @@ abstract class Filesystem
   }
 
   final public static function exists(Request $request, Array $arguments = []) {
-    return file_exists(self::getRealPath($arguments['path']));
+    return file_exists(self::_getRealPath($arguments['path']));
   }
 
   final public static function read(Request $request, Array $arguments = []) {
-    $path = self::getRealPath($arguments['path']);
+    $path = self::_getRealPath($arguments['path']);
     $mime = Utils::getMIME($path);
 
     if ( !isset($arguments["raw"]) ) {
@@ -101,43 +132,145 @@ abstract class Filesystem
     if ( empty($arguments['raw']) || $arguments['raw'] === false ) {
       $data = base64_decode(substr($data, strpos($data, ',') + 1));
     }
-    return file_put_contents(self::getRealPath($arguments['path']), $data) !== false;
+    return file_put_contents(self::_getRealPath($arguments['path']), $data) !== false;
   }
 
   final public static function delete(Request $request, Array $arguments = []) {
-    return unlink(self::getRealPath($arguments['path']));
+    $path = self::_getRealPath($arguments['path']);
+
+    if ( is_file($path) ) {
+      if ( !is_writeable($path) ) throw new Exception('Read permission denied');
+    } else if ( is_dir($path) ) {
+      if ( !is_writeable(dirname($path)) ) throw new Exception('Read permission denied');
+      return Utils::rmdir($path);
+    } else {
+      throw new exception('No such file or directory!');
+    }
+
+    return unlink($path);
   }
 
   final public static function copy(Request $request, Array $arguments = []) {
-    $src = self::getRealPath($arguments['src']);
-    $dest = self::getRealPath($arguments['dest']);
+    $src = self::_getRealPath($arguments['src']);
+    $dest = self::_getRealPath($arguments['dest']);
+
+    if ( $src === $dest ) throw new Exception('Source and destination cannot be the same');
+    if ( !file_exists($src) ) throw new Exception('File does not exist');
+    if ( !is_writeable(dirname($dest)) ) throw new Exception('Permission denied');
+    if ( file_exists($dest) ) throw new Exception('Destination file already exist');
+
     return copy($src, $dest);
   }
 
   final public static function move(Request $request, Array $arguments = []) {
-    $src = self::getRealPath($arguments['src']);
-    $dest = self::getRealPath($arguments['dest']);
+    $src = self::_getRealPath($arguments['src']);
+    $dest = self::_getRealPath($arguments['dest']);
+
+    if ( $src === $dest ) throw new Exception('Source and destination cannot be the same');
+    if ( !file_exists($src) ) throw new Exception('File does not exist');
+    if ( !is_writeable(dirname($dest)) ) throw new Exception('Permission denied');
+    if ( file_exists($dest) ) throw new Exception('Destination file already exist');
+
     return rename($src, $dest);
   }
 
   final public static function mkdir(Request $request, Array $arguments = []) {
-    return mkdir(self::getRealPath($arguments['path']));
+    $path = self::_getRealPath($arguments['path']);
+
+    if ( file_exists($path) ) throw new Exception('Destination already exists');
+
+    if ( !mkdir($path) ) {
+      throw new Exception('Failed to create directory');
+    }
+    return true;
   }
 
   final public static function find(Request $request, Array $arguments = []) {
-    throw new Exception('Not implemented');
+    $path = self::_getRealPath($arguments['path']);
+    $result = [];
+
+    if ( empty($arguments['query']) ) {
+      throw new Exception('No query was given');
+    }
+
+    if ( empty($arguments['recursive']) || !$arguments['recursive'] ) {
+      if ( ($files = scandir($root)) !== false ) {
+        foreach ( $files as $f ) {
+          if ( $f == "." || $f == ".." ) continue;
+
+          if ( stristr($f, $arguments['query']) !== false ) {
+            $result[] = self::_getFileMetadata($f, $dirname, $root);
+          }
+        }
+      }
+
+      return $result;
+    }
+
+    $p = preg_replace('/\/$/', '', $path);
+    $limit = isset($arguments['limit']) ? (int) $arguments['limit'] : 0;
+    $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($p), RecursiveIteratorIterator::SELF_FIRST);
+
+    foreach( $objects as $name => $object ) {
+      if ( stristr($name, $arguments['query']) !== false ) {
+        $result[] = self::_getFileMetadata(substr($name, strlen($path)), $dirname, $root);
+      }
+
+      if ( $limit && sizeof($result) >= $limit ) {
+        break;
+      }
+    }
+
+    return $result;
   }
 
   final public static function fileinfo(Request $request, Array $arguments = []) {
-    throw new Exception('Not implemented');
+    $path = self::_getRealPath($arguments['path']);
+    $info = self::_getFileMetadata(basename($path), dirname($arguments['path']), $path);
+
+    if ( preg_match("/^image/", $info['mime']) ) {
+      if ( function_exists('exif_read_data') ) {
+        if ( $exif = exif_read_data($path) ) {
+          if ( $exif !== false ) {
+            if ( is_array($exif) ) {
+              $tmp = Array();
+              foreach ( $exif as $key => $section ) {
+                if ( is_array($section) ) {
+                  foreach ( $section as $name => $val ) {
+                    $tmp[] = "$key.$name: $val";
+                  }
+                }
+              }
+              $info['exif'] = implode("\n", $tmp);
+            }
+          }
+        }
+      }
+    }
+
+    return $info;
   }
 
   final public static function scandir(Request $request, Array $arguments = []) {
-    throw new Exception('Not implemented');
+    $path = self::_getRealPath($arguments['path']);
+    if ( !file_exists($path) || !is_dir($path) ) {
+      throw new Exception("Directory does not exist");
+    }
+
+    return array_values(array_map(function($iter) use($arguments, $path) {
+      return self::_getFileMetadata($iter, $arguments['path'], $path . '/' . $iter);
+    }, array_filter(scandir($path), function($iter) {
+      return !in_array($iter, ['.', '..']);
+    })));
   }
 
   final public static function freeSpace(Request $request, Array $arguments = []) {
-    throw new Exception('Not implemented');
+    if ( preg_match('/^osjs/', $arguments['root']) ) {
+      throw new Exception('Not allowed');
+    }
+
+    $path = self::_getRealPath($arguments['root']);
+    return disk_free_space($path);
   }
 }
 

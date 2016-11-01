@@ -52,7 +52,7 @@ class Responder
       }
     }
 
-    print $data;
+    file_put_contents('php://output', $data);
     exit;
   }
 

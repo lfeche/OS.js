@@ -27,17 +27,51 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
+const _fs = require('node-fs-extra');
+const _utils = require('./../../lib/utils.js');
+
+function _readFile(username, path, resolve) {
+  function _done(data) {
+    data = data || {};
+    resolve(username ? (data[username] || []) : data);
+  }
+
+  _fs.readFile(path, function(err, data) {
+    console.warn(username, path, err, data);
+    if ( err ) {
+      _done(null);
+    } else {
+      _done(JSON.parse(data));
+    }
+  });
+}
 
 module.exports.setSettings = function(instance, http, resolve, reject) {
-  resolve(true);
+  const path = _utils.resolveDirectory(instance, http, instance.CONFIG.modules.storage.system.settings);
+  _fs.writeFile(path, JSON.stringify(http.data.settings), function(err, res) {
+    if ( err ) {
+      reject(err);
+    } else {
+      resolve(true);
+    }
+  });
 };
 
 module.exports.getSettings = function(instance, http, resolve, reject) {
-  resolve({});
+  const path = _utils.resolveDirectory(instance, http, instance.CONFIG.modules.storage.system.settings);
+  _readFile(null, path, resolve);
+};
+
+module.exports.getGroups = function(instance, http, resolve, reject) {
+  const username = http.session.get('username');
+  const path = instance.CONFIG.modules.storage.system.groups;
+  _readFile(username, path, resolve);
 };
 
 module.exports.getBlacklist = function(instance, http, resolve, reject) {
-  resolve([]);
+  const username = http.session.get('username');
+  const path = instance.CONFIG.modules.storage.system.blacklist;
+  _readFile(username, path, resolve);
 };
 
 module.exports.setBlacklist = function(instance, http, resolve, reject) {

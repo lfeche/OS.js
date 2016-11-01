@@ -13,7 +13,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
@@ -27,46 +27,54 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(API, Utils, Storage) {
-  'use strict';
+const _passwd = require('passwd-linux');
+const _userid = require('userid');
 
-  function DemoStorage() {
-    Storage.apply(this, arguments);
-  }
-
-  DemoStorage.prototype = Object.create(Storage.prototype);
-  DemoStorage.constructor = Storage;
-
-  DemoStorage.prototype.init = function(callback) {
-    var curr = API.getConfig('Version');
-    var version = localStorage.getItem('__version__');
-    if ( curr !== version ) {
-      localStorage.clear();
+module.exports.login = function(instance, http, resolve, reject) {
+  _passwd.checkPass(login.username, login.password, function(err, res) {
+    if ( !err && res !== 'passwordCorrect' ) {
+      err = 'Invalid credentials';
     }
-    localStorage.setItem('__version__', String(curr));
 
-    callback(null, true);
-  };
+    if ( err ) {
+      reject(err);
+    } else {
+      resolve({
+        id: _userid.uid(login.username),
+        username: login.username,
+        name: login.username
+      });
+    }
+  });
+};
 
-  DemoStorage.prototype.settings = function(pool, storage, callback) {
-    Object.keys(storage).forEach(function(key) {
-      if ( pool && key !== pool ) {
-        return;
-      }
+module.exports.logout = function(instance, http, resolve, reject) {
+  resolve(true);
+};
 
-      try {
-        localStorage.setItem('OSjs/' + key, JSON.stringify(storage[key]));
-      } catch ( e ) {}
-    });
+module.exports.manage = function(instance, http, resolve, reject) {
+  reject('Not available');
+};
 
-    callback();
-  };
+module.exports.initSession = function(instance, http, resolve, reject) {
+  resolve(true);
+};
 
-  /////////////////////////////////////////////////////////////////////////////
-  // EXPORTS
-  /////////////////////////////////////////////////////////////////////////////
+module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+  resolve(true);
+};
 
-  OSjs.Storage = OSjs.Storage || {};
-  OSjs.Storage.demo = DemoStorage;
+module.exports.checkSession = function(instance, http, resolve, reject) {
+  if ( http.session.get('username') ) {
+    resolve();
+  } else {
+    reject('You have no OS.js Session, please log in!');
+  }
+};
 
-})(OSjs.API, OSjs.Utils, OSjs.Core.Storage);
+module.exports.register = function(instance, config) {
+  _config = config;
+};
+
+module.exports.destroy = function() {
+};

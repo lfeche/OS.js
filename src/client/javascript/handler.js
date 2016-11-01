@@ -321,13 +321,10 @@
    */
   Handler.prototype.saveSettings = function(pool, storage, callback) {
     var self = this;
-    if ( this._saveTimeout ) {
-      clearTimeout(this._saveTimeout);
-      this._saveTimeout = null;
-    }
-
-    setTimeout(function() {
-      self.storage.settings(storage, self, callback);
+    clearTimeout(this._saveTimeout);
+    this._saveTimeout = setTimeout(function() {
+      self.storage.settings(pool, storage, callback);
+      clearTimeout(self._saveTimeout);
     }, 250);
   };
 

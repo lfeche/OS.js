@@ -28,49 +28,79 @@
  * @licence Simplified BSD License
  */
 const _mysql = require('mysql');
+const _bcrypt = require('bcrypt');
 const _utils = require('./../../lib/utils.js');
 
 var pool;
 
-module.exports.setSettings = function(instance, http, resolve, reject) {
-  const username = http.session.get('username');
-  const settings = JSON.stringify(http.data.settings);
+module.exports.login = function(instance, http, resolve, reject) {
+  const q = 'SELECT `id`, `username`, `name`, `groups`, `password` FROM `users` WHERE `username` = ? LIMIT 1;';
+  const a = [http.data.username];
 
-  _utils.mysqlQuery(pool, 'UPDATE `users` SET `settings` = ? WHERE `username` = ? LIMIT 1;', [settings, username], function(err, row) {
+  function _invalid() {
+    reject('Invalid credentials');
+  }
+
+  function _login(row) {
+    var groups = [];
+    try {
+      groups = JSON.parse(row.groups);
+    } catch (e) {}
+
+    resolve({
+      id: parseInt(row.id),
+      username: row.username,
+      name: row.name,
+      groups: groups
+    });
+  }
+
+  function _auth(row) {
+    const hash = row.password.replace(/^\$2y(.+)$/i, '\$2a$1');
+    _bcrypt.compare(http.data.password, hash, function(err, res) {
+      if ( err ) {
+        reject(err);
+      } else if ( res === true ) {
+        _login(row);
+      } else {
+        _invalid();
+      }
+    });
+  }
+
+  _utils.mysqlQuery(pool, q, a, function(err, row, fields) {
     if ( err ) {
       reject(err);
+    } else if ( !row ) {
+      _invalid();
     } else {
-      resolve(true);
-    }
-  });
-};
-
-module.exports.getSettings = function(instance, http, resolve, reject) {
-  const username = http.session.get('username');
-  _utils.mysqlQuery(pool, 'SELECT `settings` FROM `users` WHERE `username` = ? LIMIT 1;', [username], function(err, row) {
-    row = row || {};
-    if ( err ) {
-      reject(err);
-    } else {
-      var json = {};
-      try {
-        json = JSON.parse(row.settings);
-      } catch (e) {}
-      resolve(json);
+      _auth(row);
     }
   }, true);
 };
 
-module.exports.getGroups = function(instance, http, resolve, reject) {
-  resolve([]); // Unused in this case
-};
-
-module.exports.getBlacklist = function(instance, http, resolve, reject) {
-  resolve([]);
-};
-
-module.exports.setBlacklist = function(instance, http, resolve, reject) {
+module.exports.logout = function(instance, http, resolve, reject) {
   resolve(true);
+};
+
+module.exports.manage = function(instance, http, resolve, reject) {
+  reject('Not available');
+};
+
+module.exports.initSession = function(instance, http, resolve, reject) {
+  resolve(true);
+};
+
+module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+  resolve(true);
+};
+
+module.exports.checkSession = function(instance, http, resolve, reject) {
+  if ( http.session.get('username') ) {
+    resolve();
+  } else {
+    reject('You have no OS.js Session, please log in!');
+  }
 };
 
 module.exports.register = function(instance, config) {

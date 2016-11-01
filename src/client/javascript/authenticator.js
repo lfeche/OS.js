@@ -163,20 +163,18 @@
         password: p.value
       }, function(err) {
         if ( err ) {
-          alert(error);
+          alert(err);
           _restore();
-          return;
+        } else {
+          container.parentNode.removeChild(container);
+          callback();
         }
-
-        container.parentNode.removeChild(container);
       });
     };
 
     container.style.display = 'block';
 
     _restore();
-
-    callback(null, true);
   };
 
   /////////////////////////////////////////////////////////////////////////////

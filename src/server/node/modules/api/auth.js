@@ -44,23 +44,50 @@
  * @memberof modules.api
  */
 module.exports.login = function(instance, http, resolve, reject) {
-  new Promise(function(res, rej) {
-    instance.AUTH.login(instance, http, res, rej);
-  }).then(function(userData) {
+  function _fail(e) {
+    http.session.set('username', null);
+    http.session.set('groups', null);
+    reject(e);
+  }
+
+  function _proceed(userData) {
+    http.session.set('username', userData.username);
+    http.session.set('groups', JSON.stringify(userData.groups));
+
     new Promise(function(res, rej) {
       instance.STORAGE.getSettings(instance, http, res, rej);
     }).then(function(userSettings) {
+
       new Promise(function(res, rej) {
         instance.STORAGE.getSettings(instance, http, res, rej);
       }).then(function(blacklist) {
+        http.session.set('username', userData.username);
+        http.session.set('groups', JSON.stringify(userData.groups));
+
         resolve({
           userData: userData,
           userSettings: userSettings,
           blacklistedPackages: blacklist
         });
-      }).catch(reject);
-    }).catch(reject);
-  }).catch(reject);
+      }).catch(_fail);
+
+    }).catch(_fail);
+  }
+
+  new Promise(function(res, rej) {
+    instance.AUTH.login(instance, http, res, rej);
+  }).then(function(userData) {
+    if ( typeof userData.groups === 'undefined' ) {
+      new Promise(function(res, rej) {
+        instance.STORAGE.getGroups(instance, http, function(groups) {
+          userData.groups = groups;
+          _proceed(userData);
+        });
+      });
+    } else {
+      _proceed(userData);
+    }
+  }).catch(_fail);
 };
 
 /**

@@ -29,16 +29,11 @@
  */
 
 module.exports.login = function(instance, http, resolve, reject) {
-  const groups = ['admin'];
-
-  http.session.set('username', 'demo');
-  http.session.set('groups', JSON.stringify(groups));
-
   resolve({
     id: 0,
     username: 'demo',
     name: 'Demo User',
-    groups: groups
+    groups: ['admin']
   });
 };
 

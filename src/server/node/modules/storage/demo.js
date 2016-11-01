@@ -36,6 +36,10 @@ module.exports.getSettings = function(instance, http, resolve, reject) {
   resolve({});
 };
 
+module.exports.getGroups = function(instance, http, resolve, reject) {
+  resolve([]); // Unused in this case
+};
+
 module.exports.getBlacklist = function(instance, http, resolve, reject) {
   resolve([]);
 };

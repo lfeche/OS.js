@@ -54,7 +54,7 @@
     return Authenticator.prototype.login.apply(this, arguments);
   };
 
-  Authenticator.prototype.onCreateUI = function(callback) {
+  DemoAuthenticator.prototype.onCreateUI = function(callback) {
     this.handler.login({
       username: 'demo',
       password: 'demo'

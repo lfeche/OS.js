@@ -13,7 +13,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
@@ -27,46 +27,50 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(API, Utils, Storage) {
-  'use strict';
+const _pam = require('authenticate-pam');
+const _userid = require('userid');
 
-  function DemoStorage() {
-    Storage.apply(this, arguments);
-  }
-
-  DemoStorage.prototype = Object.create(Storage.prototype);
-  DemoStorage.constructor = Storage;
-
-  DemoStorage.prototype.init = function(callback) {
-    var curr = API.getConfig('Version');
-    var version = localStorage.getItem('__version__');
-    if ( curr !== version ) {
-      localStorage.clear();
+module.exports.login = function(instance, http, resolve, reject) {
+  _pam.authenticate(http.data.username, http.data.password, function(err) {
+    if ( err ) {
+      reject(err);
+    } else {
+      resolve({
+        id: _userid.uid(http.data.username),
+        username: http.data.username,
+        name: http.data.username
+      });
     }
-    localStorage.setItem('__version__', String(curr));
+  });
+};
 
-    callback(null, true);
-  };
+module.exports.logout = function(instance, http, resolve, reject) {
+  resolve(true);
+};
 
-  DemoStorage.prototype.settings = function(pool, storage, callback) {
-    Object.keys(storage).forEach(function(key) {
-      if ( pool && key !== pool ) {
-        return;
-      }
+module.exports.manage = function(instance, http, resolve, reject) {
+  reject('Not available');
+};
 
-      try {
-        localStorage.setItem('OSjs/' + key, JSON.stringify(storage[key]));
-      } catch ( e ) {}
-    });
+module.exports.initSession = function(instance, http, resolve, reject) {
+  resolve(true);
+};
 
-    callback();
-  };
+module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+  resolve(true);
+};
 
-  /////////////////////////////////////////////////////////////////////////////
-  // EXPORTS
-  /////////////////////////////////////////////////////////////////////////////
+module.exports.checkSession = function(instance, http, resolve, reject) {
+  if ( http.session.get('username') ) {
+    resolve();
+  } else {
+    reject('You have no OS.js Session, please log in!');
+  }
+};
 
-  OSjs.Storage = OSjs.Storage || {};
-  OSjs.Storage.demo = DemoStorage;
+module.exports.register = function(instance, config) {
+  _config = config;
+};
 
-})(OSjs.API, OSjs.Utils, OSjs.Core.Storage);
+module.exports.destroy = function() {
+};

@@ -107,3 +107,95 @@ module.exports.permissionToString = function permissionToString(mode) {
 
   return str;
 };
+
+/**
+ * Performs a Mysql query
+ *
+ * @param {Object}    pool      Mysql pool
+ * @param {String}    q         Query string
+ * @param {Array}     a         Query bind arguments
+ * @param {Function}  cb        Callback
+ * @param {Boolean}   [first]   Select first row only
+ *
+ * @function mysqlQuery
+ * @memeberof lib.osjs
+ */
+module.exports.mysqlQuery = function(pool, q, a, cb, first) {
+  if ( pool ) {
+    pool.getConnection(function(err, connection) {
+      if ( err ) {
+        cb(err);
+      } else {
+        connection.query(q, a, function(err, row, fields) {
+          if ( first ) {
+            cb(err, row ? row[0] : null, fields);
+          } else {
+            cb(err, row, fields);
+          }
+          connection.release();
+        });
+      }
+    });
+  } else {
+    cb('No mysql connection available');
+  }
+};
+
+/**
+ * Creates a mysql connection configuration object
+ *
+ * @param {Object}    config      Configuration tree
+ *
+ * @function mysqlConfiguration
+ * @memeberof lib.osjs
+ */
+module.exports.mysqlConfiguration = function(config) {
+  var ccfg = {};
+  Object.keys(config).forEach(function(c) {
+    if ( typeof config[c] === 'object' ) {
+      ccfg[c] = config[c];
+    } else {
+      ccfg[c] = String(config[c]);
+    }
+  });
+  return ccfg;
+};
+
+/**
+ * Initializes a session
+ *
+ * @param   {ServerInstance}   instance      OS.js instance
+ * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {String}           str           String to resolve
+ * @param   {String}           [protocol]    Resolved protocol name (for internal paths)
+ *
+ * @returns {String}
+ *
+ * @function resolveDirectory
+ * @memeberof lib.osjs
+ */
+module.exports.resolveDirectory = function(instance, http, str, protocol) {
+  const rmap = {
+    '%DIST%': function() {
+      return instance.DIST;
+    },
+    '%UID%': function() {
+      return http.session.get('username');
+    },
+    '%USERNAME%': function() {
+      return http.session.get('username');
+    },
+    '%DROOT%': function() {
+      return instance.DIRS.root;
+    },
+    '%MOUNTPOINT%': function() {
+      return protocol;
+    }
+  };
+
+  Object.keys(rmap).forEach(function(k) {
+    str = str.replace(new RegExp(k, 'g'), rmap[k]());
+  });
+
+  return str;
+};

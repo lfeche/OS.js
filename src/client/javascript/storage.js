@@ -70,11 +70,12 @@
    * @function settings
    * @memberof OSjs.Core.Storage#
    *
+   * @param   {String}               [pool]          Settings pool
    * @param   {Object}               storage         Settings storage data
    * @param   {CallbackHandler}      callback        Callback function
    */
-  Storage.prototype.settings = function(storage, callback) {
-    this.handler.callAPI('settings', {settings: storage}, function(response) {
+  Storage.prototype.settings = function(pool, storage, callback) {
+    this.handler.callAPI('settings', {pool: pool, settings: Utils.cloneObject(storage)}, function(response) {
       callback(false, response.result);
     }, function(error) {
       callback(error);

@@ -358,15 +358,6 @@
         return;
       }
 
-      if ( !inited ) {
-        if ( !handler.loggedIn ) {
-          if ( confirm(OSjs.API._('ERR_NO_SESSION')) ) {
-            handler.init(_done);
-          }
-          return;
-        }
-      }
-
       inited = true;
 
       callback();

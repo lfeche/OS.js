@@ -57,28 +57,7 @@ function resolveRequestPath(instance, http, query) {
   }
 
   if ( typeof found === 'string' ) {
-    const rmap = {
-      '%DIST%': function() {
-        return instance.DIST;
-      },
-      '%UID%': function() {
-        return http.session.get('username');
-      },
-      '%USERNAME%': function() {
-        return http.session.get('username');
-      },
-      '%DROOT%': function() {
-        return instance.DIRS.root;
-      },
-      '%MOUNTPOINT%': function() {
-        return protocol;
-      }
-    };
-
-    Object.keys(rmap).forEach(function(k) {
-      found = found.replace(new RegExp(k, 'g'), rmap[k]());
-    });
-
+    found = _osjsutils.resolveDirectory(instance, http, found, protocol);
     real = _path.join(found, path);
   }
 

@@ -236,19 +236,18 @@
     var self = this;
     var settings = {};
     var wm = OSjs.Core.getWindowManager();
-    var saves = [];
 
     this._app.modules.forEach(function(m) {
       if ( m._inited ) {
         var res = m.save(self, self._scheme, settings, wm);
         if ( typeof res === 'function' ) {
-          saves.push(res);
+          res();
         }
       }
     });
 
     this._toggleLoading(true);
-    this._app.saveSettings(settings, saves, function() {
+    this._app.saveSettings(settings, function() {
       self._toggleLoading(false);
     });
   };
@@ -350,13 +349,10 @@
     });
   };
 
-  ApplicationSettings.prototype.saveSettings = function(settings, saves, cb) {
+  ApplicationSettings.prototype.saveSettings = function(settings, cb) {
     var wm = OSjs.Core.getWindowManager();
-    wm.applySettings(settings, false, function() {
-      Utils.asyncs(saves, function(iter, idx, next) {
-        iter(next);
-      }, cb);
-    }, false);
+    wm.applySettings(settings);
+    OSjs.Core.getSettingsManager().save(null, cb);
   };
 
   ApplicationSettings.prototype.setModule = function(m) {

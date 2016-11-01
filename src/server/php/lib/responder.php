@@ -1,4 +1,4 @@
-<?php
+<?php namespace OSjs;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,28 +29,76 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Permissions
-// TODO: VFS Permissions
-// TODO: API Permissions
-// TODO: Mysql Authenticator
-// TODO: Mysql Storage
-// TODO: Protect Filesystem paths
-// TODO: VFS Methods
-
 /**
- * Works using CGI or any other method
- * To use with PHP Internal Webserver:
- *  To use with `php -S localhost:8000 src/server/php/server.php'
- *  in the directory dist/
+ * HTTP Response Creator
  */
-ini_set('always_populate_raw_post_data', 1);
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
+class Responder
+{
+  /**
+   * Respond with given content, code and headers
+   */
+  public function raw($data, $code, $headers = []) {
+    if ( $code == 500 ) {
+      $headers[] = 'HTTP/1.0 500 Internal Server Error';
+    } else if ( $code == 404 ) {
+      $headers[] = 'HTTP/1.0 404 Not Found';
+    }
 
-require(__DIR__ . '/lib/utils.php');
-require(__DIR__ . '/lib/responder.php');
-require(__DIR__ . '/lib/request.php');
-require(__DIR__ . '/lib/instance.php');
+    foreach ( $headers as $k => $v ) {
+      if ( is_numeric($k) || empty($k) ) {
+        header($v);
+      } else {
+        header(sprintf('%s: %s', $k, $v));
+      }
+    }
 
-\OSjs\Instance::run();
+    print $data;
+    exit;
+  }
+
+  /**
+   * Respond as JSON
+   */
+  public function json($data, $code = null) {
+    return $this->raw(json_encode($data), $code ?: 200, [
+      'Content-Type' => 'application/json'
+    ]);
+  }
+
+  /**
+   * Respond with buffered file output
+   */
+  public function file($path, $mime = Null) {
+    session_write_close();
+
+    if ( $handle = fopen($path, "rb") ) {
+      $length = filesize($path);
+
+      $etag = md5(serialize(fstat($handle)));
+
+      header("Etag: {$etag}");
+      header("Content-type: {$mime}; charset=utf-8");
+      header("Content-length: {$length}");
+
+      while ( !feof($handle) ) {
+        print fread($handle, 1204*1024);
+        ob_flush();
+        flush();
+      }
+
+      fclose($handle);
+    }
+
+    exit;
+  }
+
+  /**
+   * Respond with error
+   */
+  public function error($message, $code = 500) {
+    if ( php_sapi_name() === "cli-server" ) {
+      return false;
+    }
+    return $this->raw($message, $code);
+  }
+}

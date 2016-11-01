@@ -1,4 +1,4 @@
-<?php
+<?php namespace OSjs;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,28 +29,34 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Permissions
-// TODO: VFS Permissions
-// TODO: API Permissions
-// TODO: Mysql Authenticator
-// TODO: Mysql Storage
-// TODO: Protect Filesystem paths
-// TODO: VFS Methods
+use OSjs\Instance;
 
 /**
- * Works using CGI or any other method
- * To use with PHP Internal Webserver:
- *  To use with `php -S localhost:8000 src/server/php/server.php'
- *  in the directory dist/
+ * Collection of Utility function
  */
-ini_set('always_populate_raw_post_data', 1);
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
+abstract class Utils
+{
+  /**
+   * Gets MIME from path
+   */
+  final public static function getMIME($fname) {
+    if ( function_exists('pathinfo') ) {
+      if ( $ext = pathinfo($fname, PATHINFO_EXTENSION) ) {
+        $ext = strtolower($ext);
+        $mime = (array)Instance::getConfig()->mimes;
+        if ( isset($mime[".{$ext}"]) ) {
+          return $mime[".{$ext}"];
+        }
+      }
+    }
 
-require(__DIR__ . '/lib/utils.php');
-require(__DIR__ . '/lib/responder.php');
-require(__DIR__ . '/lib/request.php');
-require(__DIR__ . '/lib/instance.php');
+    if ( function_exists('finfo_open') ) {
+      $finfo = finfo_open(FILEINFO_MIME_TYPE);
+      $mime = finfo_file($finfo, $fname);
+      finfo_close($finfo);
+      return $mime;
+    }
 
-\OSjs\Instance::run();
+    return null;
+  }
+}

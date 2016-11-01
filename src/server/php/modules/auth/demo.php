@@ -1,9 +1,7 @@
-<?php
+<?php namespace OSjs\Core;
+
 /*!
  * OS.js - JavaScript Operating System
- *
- * Example Handler: Login screen and session/settings handling via database
- * PLEASE NOTE THAT THIS AN EXAMPLE ONLY, AND SHOUD BE MODIFIED BEFORE USAGE
  *
  * Copyright (c) 2011-2016, Anders Evenrud <andersevenrud@gmail.com>
  * All rights reserved.
@@ -32,57 +30,23 @@
  * @licence Simplified BSD License
  */
 
-/**
- * DemoAPIHandler for demoing
- */
-class DemoAPIHandler
-  extends APIHandler
+use OSjs\Request;
+
+abstract class Authenticator
 {
-  public static function login(Array $arguments) {
-    $user = APIUser::login(Array(
-      "id" => 0,
-      "username" => "demo",
-      "name" => "Demo User",
-      "groups" => Array("admin")
-    ));
 
-    return Array(false, Array(
-      "userData" => $user->getData(),
-      "userSettings" => Array()
-    ));
+  public static function login(Request $request) {
+    return [
+      'id'  => 0,
+      'username' => 'demo',
+      'name' => 'Demo',
+      'groups' => ['admin']
+    ];
   }
 
-  public static function logout(Array $arguments) {
-    APIUser::logout();
-    return Array(false, true);
-  }
-
-  public static function users(Array $arguments) {
-    if ( in_array($arguments['command'], ['add', 'remove', 'edit', 'passwd']) ) {
-      return Array(false, true);
-    } else if ( $arguments['command'] == 'list' ) {
-      return Array(false, Array(
-        "id" => 0,
-        "username" => "demo",
-        "name" => "Demo User",
-        "groups" => Array("admin")
-      ));
-    }
-    return Array(false, true);
-  }
-
-  /**
-   * Demo handler allows EVERYTHING
-   */
-  public static function checkPrivilege($requires = null) {
-    APIHandler::checkPrivilege(true);
+  public static function logout(Request $request) {
+    return true;
   }
 
 }
 
-API::AddHandler('login', Array('DemoAPIHandler', 'login'));
-API::AddHandler('logout', Array('DemoAPIHandler', 'logout'));
-API::AddHandler('users', Array('DemoAPIHandler', 'users'));
-API::SetHandler('DemoAPIHandler');
-
-?>

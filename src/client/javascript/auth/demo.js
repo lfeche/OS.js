@@ -38,6 +38,20 @@
   DemoAuthenticator.constructor = Authenticator;
 
   DemoAuthenticator.prototype.login = function(login, callback) {
+    var settings = {};
+    var key;
+
+    for ( var i = 0; i < localStorage.length; i++ ) {
+      key = localStorage.key(i);
+      if ( key.match(/^OSjs\//) ) {
+        try {
+          settings[key.replace(/^OSjs\//, '')] = JSON.parse(localStorage.getItem(key));
+        } catch ( e ) {
+          console.warn('DemoAuthenticator::login()', e, e.stack);
+        }
+      }
+    }
+
     if ( API.getConfig('Connection.Type') === 'standalone' || window.location.protocol === 'file:' ) {
       return callback({
         userData: {
@@ -46,12 +60,19 @@
           name: 'Demo User',
           groups: groups
         },
-        userSettings: {},
+        userSettings: settings,
         blacklistedPackages: []
       });
     }
 
-    return Authenticator.prototype.login.apply(this, arguments);
+    return Authenticator.prototype.login.call(this, login, function(error, result) {
+      if ( error ) {
+        callback(error);
+      } else {
+        result.userSettings = settings;
+        callback(null, result);
+      }
+    });
   };
 
   DemoAuthenticator.prototype.onCreateUI = function(callback) {

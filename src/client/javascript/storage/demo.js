@@ -56,7 +56,9 @@
 
       try {
         localStorage.setItem('OSjs/' + key, JSON.stringify(storage[key]));
-      } catch ( e ) {}
+      } catch ( e ) {
+        console.warn('DemoStorage::settings()', e, e.stack);
+      }
     });
 
     callback();

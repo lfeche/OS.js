@@ -147,6 +147,7 @@
    * @param  {Function}   callback  Callback
    */
   SettingsManager.save = function(pool, callback) {
+    console.debug('SettingsManager::save()', pool, this.storage);
     if ( typeof callback !== 'function' ) {
       callback = function() {};
     }

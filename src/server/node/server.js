@@ -28,7 +28,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Add string-loglevel support in logger
 // TODO: Make sure same HTTP error codes are sent as in old codebase
 // TODO: Go over all initialization and events and add proper logging
 // TODO: Add checkPermission for all handlers!
@@ -76,6 +75,7 @@ const _instance = require('./lib/instance.js');
 const _vfs = require('./lib/vfs.js');
 const _url = require('url');
 const _fs = require('node-fs-extra');
+const _path = require('path');
 const _session = require('simple-session');
 const _formidable = require('formidable');
 const _minimist = require('minimist');

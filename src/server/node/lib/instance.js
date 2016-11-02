@@ -492,6 +492,8 @@ module.exports.init = function start(opts, start) {
     start(Object.freeze(instance))
       .then(function(result) {
         registerPackages(result.httpServer).then(result.start);
+      }).catch(function(e) {
+        console.error(e.stack, e);
       });
   }
 

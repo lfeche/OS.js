@@ -52,6 +52,7 @@
  * @typedef ServerInstance
  */
 
+const _child = require('child_process');
 const _fs = require('node-fs-extra');
 const _path = require('path');
 const _osjs = {
@@ -64,6 +65,8 @@ const _osjs = {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 ///////////////////////////////////////////////////////////////////////////////
+
+var children = [];
 
 const instance = {
   LOGGER: null,
@@ -288,6 +291,16 @@ function registerPackages(server) {
     return true;
   }
 
+  function _launchSpawners(pn, module, metadata) {
+    if ( metadata.spawn && metadata.spawn.enabled ) {
+      const spawner = _path.join(instance.DIRS.packages, pn, metadata.spawn.exec);
+      logger().lognt('INFO', 'Launching', logger().colored('Spawner', 'bold'), spawner.replace(instance.DIRS.root, ''));
+      children.push(_child.fork(spawner), [], {
+        stdio: 'pipe'
+      });
+    }
+  }
+
   function _load(resolve, reject) {
     _fs.readFile(path, function(err, file) {
       if ( err ) {
@@ -301,12 +314,13 @@ function registerPackages(server) {
         const check = _path.join(instance.DIRS.packages, path, 'api.js');
         const metadata = packages[path];
 
-        if ( _fs.existsSync(check) ) {
+        if ( metadata.enabled !== false && _fs.existsSync(check) ) {
 
           var deprecated = false;
           if ( metadata.type === 'extension' ) {
             logger().lognt('INFO', 'Loading', logger().colored('Application', 'bold'), check.replace(instance.DIRS.root, ''));
             deprecated = _registerExtension(require(check));
+            _launchSpawners(path, module, metadata);
           } else {
             logger().lognt('INFO', 'Loading', logger().colored('Extension', 'bold'), check.replace(instance.DIRS.root, ''));
             deprecated = _registerApplication(require(check));
@@ -458,6 +472,10 @@ module.exports.destroy = function destroy() {
   if ( instance.AUTH ) {
     instance.AUTH.destroy();
   }
+
+  children.forEach(function(c) {
+    c.kill();
+  });
 };
 
 /**

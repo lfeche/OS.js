@@ -351,7 +351,7 @@ _instance.init(opts, function(instance) {
 
   // HTTP servers
   if ( httpConfig.mode === 'http2' || httpConfig.mode === 'https' ) {
-    const rdir = httpConfig.cert.path || __dirname;
+    const rdir = httpConfig.cert.path || instance.DIRS.server;
     const cname = httpConfig.cert.name || 'localhost';
     const copts = httpConfig.cert.options || {};
 

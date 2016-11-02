@@ -309,11 +309,12 @@ _instance.init(opts, function(instance) {
     const session_id = _session.init(request, response);
     const contentType = request.headers['content-type'] || '';
 
-    logger.log(logger.VERBOSE, logger.colored('<<<', 'bold'), request.method, path);
-
     if ( proxyCall(instance, proxyServer, request, response) ) {
+      logger.log('VERBOSE', logger.colored('PROXY', 'bold'), path);
       return;
     }
+
+    logger.log('VERBOSE', logger.colored(request.method, 'bold'), path);
 
     const respond = createHttpResponder(instance, response);
     if ( request.method === 'POST' ) {
@@ -366,7 +367,10 @@ _instance.init(opts, function(instance) {
   // Websocket servers
   if ( httpConfig.connection === 'ws' ) {
     websocketServer = new (require('ws')).Server({server: httpServer});
+
     websocketServer.on('connection', function(ws) {
+      logger.log('VERBOSE', logger.colored('WS', 'bold'), 'New connection...');
+
       ws.on('message', function(data) {
         const message = JSON.parse(data);
         const path = message.path;
@@ -379,6 +383,7 @@ _instance.init(opts, function(instance) {
       });
 
       ws.on('close', function() {
+        logger.log('VERBOSE', logger.colored('WS', 'bold'), 'Connection closed...');
       });
     });
   }
@@ -410,8 +415,15 @@ _instance.init(opts, function(instance) {
       websocketServer: websocketServer,
       proxyServer: proxyServer,
       start: function() {
-        logger.lognt('INFO', logger.colored(['\n\nStarting OS.js HTTP server on port', instance.PORT, 'in', instance.DIST].join(' '), 'green'));
+        logger.log('INFO', logger.colored('Starting OS.js server', 'green'));
+        logger.log('INFO', logger.colored(['Using', httpConfig.mode, 'on port', instance.PORT, 'in', instance.DIST].join(' '), 'green'));
+        if ( httpConfig.connection === 'ws' ) {
+          logger.log('INFO', logger.colored('Using WebSocket', 'green'));
+        }
+
         httpServer.listen(instance.PORT);
+
+        logger.log('INFO', logger.colored('Ready...', 'green'));
       }
     });
   });

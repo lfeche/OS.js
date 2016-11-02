@@ -166,9 +166,9 @@ module.exports.create = function createLogger(config, lvl) {
         var str = args.shift();
 
         if ( colors ) {
-          var ref = colors;
+          var ref = colors || [];
           args.forEach(function(a) {
-            ref = ref[a];
+            ref = ref[a] || 'white';
           });
           return ref(str);
         } else {
@@ -222,7 +222,7 @@ module.exports.create = function createLogger(config, lvl) {
 
   level = ns.INFO | ns.WARNING | ns.ERROR | ns.VERBOSE; // FIXME
 
-  ns.lognt(ns.INFO, '---', 'Created Logger with loglevel', level);
+  ns.lognt(ns.INFO, 'Loading', ns.colored('Logger', 'bold'), 'with level', level);
 
   return ns;
 };

@@ -28,7 +28,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Secure VFS paths in filesystem (resolve and match)
 // TODO: Add string-loglevel support in logger
 // TODO: Make sure same HTTP error codes are sent as in old codebase
 // TODO: Go over all initialization and events and add proper logging

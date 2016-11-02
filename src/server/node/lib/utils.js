@@ -28,6 +28,8 @@
  * @licence Simplified BSD License
  */
 
+const _path = require('path');
+
 /**
  * @namespace lib.osjs
  */
@@ -198,4 +200,25 @@ module.exports.resolveDirectory = function(instance, http, str, protocol) {
   });
 
   return str;
+};
+
+/**
+ * Flattens a virtual path to avoid going down below the mount root
+ *
+ * @param   {ServerInstance}   instance     OS.js instance
+ * @param   {ServerRequest}    http         OS.js Server Request
+ * @param   {String}           path         The virtual path
+ *
+ * @returns {String}
+ *
+ * @function resolveDirectory
+ * @memeberof lib.osjs
+ */
+module.exports.flattenVirtualPath = function(path) {
+  const parts = path.split(/(.*)\:\/\/(.*)/);
+  const protocol = parts[1];
+  const corrections = String(parts[2]).replace(/^\/+?/, '/').replace(/\/+/g, '/');
+  const resolved = _path.resolve(corrections) || '/';
+
+  return protocol + '://' + resolved;
 };

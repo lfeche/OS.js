@@ -32,8 +32,8 @@ const _nfs = require('fs');
 const _path = require('path');
 const _fstream = require('fstream');
 
-const _osjsutils = require('./../../lib/utils.js');
-const _osjsvfs = require('./../../lib/vfs.js');
+const _utils = require('./../../lib/utils.js');
+const _vfs = require('./../../lib/vfs.js');
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
@@ -43,6 +43,8 @@ const _osjsvfs = require('./../../lib/vfs.js');
  * Resolves a OS.js request path to a real filesystem path
  */
 function resolveRequestPath(instance, http, query) {
+  query = _utils.flattenVirtualPath(query);
+
   const parts = query.split(/(.*)\:\/\/(.*)/);
   const protocol = parts[1];
   const path = String(parts[2]).replace(/^\/+?/, '');
@@ -57,11 +59,9 @@ function resolveRequestPath(instance, http, query) {
   }
 
   if ( typeof found === 'string' ) {
-    found = _osjsutils.resolveDirectory(instance, http, found, protocol);
+    found = _utils.resolveDirectory(instance, http, found, protocol);
     real = _path.join(found, path);
   }
-
-  // TODO SECURE!!!
 
   return {
     query: query,
@@ -141,10 +141,10 @@ function createFileIter(instance, query, real, iter, stat) {
   const type = stat.isFile() ? 'file' : 'dir';
 
   if ( type === 'file' ) {
-    mime = _osjsvfs.getMime(instance, iter);
+    mime = _vfs.getMime(instance, iter);
   }
 
-  const perm = _osjsutils.permissionToString(stat.mode);
+  const perm = _utils.permissionToString(stat.mode);
 
   return {
     filename: iter,
@@ -229,7 +229,7 @@ const VFS = {
         });
       }
     } else {
-      const mime = _osjsvfs.getMime(instance, args.path);
+      const mime = _vfs.getMime(instance, args.path);
       _fs.readFile(resolved.real, function(e, data) {
         if ( e ) {
           reject(e);
@@ -396,7 +396,7 @@ const VFS = {
     const resolved = resolveRequestPath(instance, http, args.path);
 
     if ( !qargs.recursive ) {
-      return readDir(instance, args.path, resolved.real, function(iter) {
+      return readDir(instance, resolved.path, resolved.real, function(iter) {
         if (  ['.', '..'].indexOf(iter) === -1 ) {
           return iter.toLowerCase().indexOf(query) !== -1;
         }
@@ -447,7 +447,7 @@ const VFS = {
 
     existsWrapper(false, resolved.real, function() {
       const info = createFileIter(instance, args.path, resolved.real, _path.basename(resolved.real));
-      const mime = _osjsvfs.getMime(instance, resolved.real);
+      const mime = _vfs.getMime(instance, resolved.real);
 
       readExif(resolved.real, mime).then(function(result) {
         info.exif = result || 'No EXIF data available';
@@ -461,7 +461,7 @@ const VFS = {
 
   scandir: function(instance, http, args, resolve, reject) {
     const resolved = resolveRequestPath(instance, http, args.path);
-    readDir(instance, args.path, resolved.real).then(resolve).catch(reject);
+    readDir(instance, resolved.path, resolved.real).then(resolve).catch(reject);
   },
 
   freeSpace: function(instance, http, args, resolve, reject) {

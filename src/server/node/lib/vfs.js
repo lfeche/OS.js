@@ -33,6 +33,7 @@
  */
 
 const _auth = require('./auth.js');
+const _utils = require('./utils.js');
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
@@ -59,7 +60,7 @@ function findTransport(instance, http, method, args) {
 
   const groups = instance.CONFIG.vfs.groups || {};
   const mountpoints = instance.CONFIG.vfs.mounts || {};
-  const query = (argumentMap[method] || argumentMap._default )(args);
+  const query = _utils.flattenVirtualPath((argumentMap[method] || argumentMap._default )(args));
   const parts = query.split(/(.*)\:\/\/(.*)/);
   const parsed = {
     query: query,

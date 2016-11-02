@@ -131,8 +131,8 @@ function proxyCall(instance, proxy, request, response) {
       if ( typeof matcher === 'string' ? isStringMatch(matcher, request.url) : matcher.test(request.url) ) {
         const pots = _getOptions(request.url, matcher, proxies[k]);
 
-        logger.log(logger.INFO, logger.colored('<<<', 'bold'), request.url);
-        logger.log(logger.INFO, logger.colored('>>>', 'grey', 'bold'), logger.colored(('PROXY ' + k + ' => ' + pots.target), 'yellow'));
+        logger.log('INFO', logger.colored('<<<', 'bold'), request.url);
+        logger.log('INFO', logger.colored('>>>', 'grey', 'bold'), logger.colored(('PROXY ' + k + ' => ' + pots.target), 'yellow'));
 
         proxy.web(request, response, pots);
 
@@ -410,7 +410,7 @@ _instance.init(opts, function(instance) {
       websocketServer: websocketServer,
       proxyServer: proxyServer,
       start: function() {
-        logger.lognt(logger.INFO, logger.colored(['Starting OS.js HTTP server on port', instance.PORT, 'in', instance.DIST].join(' '), 'green'));
+        logger.lognt('INFO', logger.colored(['\n\nStarting OS.js HTTP server on port', instance.PORT, 'in', instance.DIST].join(' '), 'green'));
         httpServer.listen(instance.PORT);
       }
     });

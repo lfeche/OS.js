@@ -83,15 +83,8 @@ const instance = {
   }
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// HELPERS
-///////////////////////////////////////////////////////////////////////////////
-
-function _importAPI(sourcePath) {
-  const methods = require(sourcePath);
-  Object.keys(methods).forEach(function(k) {
-    instance.API[k] = methods[k];
-  });
+function logger() {
+  return instance.LOGGER;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -151,8 +144,12 @@ function loadAPI() {
       _osjs.utils.iterate(list, function(filename, index, next) {
         if ( filename.substr(0, 1) !== '.' ) {
           const path = _path.join(dirname, filename);
-          instance.LOGGER.lognt(instance.LOGGER.INFO, '+++', '{API}', path.replace(instance.DIRS.root, ''));
-          _importAPI(path);
+          logger().lognt('INFO', 'Loading', logger().colored('API', 'bold'), path.replace(instance.DIRS.root, ''));
+
+          const methods = require(path);
+          Object.keys(methods).forEach(function(k) {
+            instance.API[k] = methods[k];
+          });
         }
         next();
       }, resolve);
@@ -170,7 +167,7 @@ function loadAuth() {
 
   function _load(resolve, reject) {
     const path = _path.join(instance.DIRS.modules, 'auth/' + name + '.js');
-    instance.LOGGER.lognt(instance.LOGGER.INFO, '+++', '{Auth}', path.replace(instance.DIRS.root, ''));
+    logger().lognt('INFO', 'Loading', logger().colored('Authenticator', 'bold'), path.replace(instance.DIRS.root, ''));
 
     const a = require(path);
     const c = instance.CONFIG.modules.auth[name] || {};
@@ -190,7 +187,7 @@ function loadStorage() {
 
   function _load(resolve, reject) {
     const path = _path.join(instance.DIRS.modules, 'storage/' + name + '.js');
-    instance.LOGGER.lognt(instance.LOGGER.INFO, '+++', '{Storage}', path.replace(instance.DIRS.root, ''));
+    logger().lognt('INFO', 'Loading', logger().colored('Storage', 'bold'), path.replace(instance.DIRS.root, ''));
 
     const a = require(path);
     const c = instance.CONFIG.modules.storage[name] || {};
@@ -217,7 +214,7 @@ function loadVFS() {
       _osjs.utils.iterate(list, function(filename, index, next) {
         if ( ['.', '_'].indexOf(filename.substr(0, 1)) === -1 ) {
           const path = _path.join(dirname, filename);
-          instance.LOGGER.lognt(instance.LOGGER.INFO, '+++', '{VFS}', path.replace(instance.DIRS.root, ''));
+          logger().lognt('INFO', 'Loading', logger().colored('VFS Transport', 'bold'), path.replace(instance.DIRS.root, ''));
           instance.VFS.push(require(path));
         }
         next();
@@ -233,7 +230,58 @@ function loadVFS() {
  */
 function registerPackages(server) {
   const path = _path.join(instance.DIRS.server, 'packages.json');
-  instance.LOGGER.lognt(instance.LOGGER.INFO, '+++', '{Configuration}', path.replace(instance.DIRS.root, ''));
+  logger().lognt('INFO', 'Loading', logger().colored('Configuration', 'bold'), path.replace(instance.DIRS.root, ''));
+
+  function _createOldInstance(instance) {
+    return {
+      request: null,
+      response: null,
+      config: instance.CONFIG,
+      handler: null,
+      logger: logger()
+    };
+  }
+
+  function _registerApplication() {
+    if ( typeof module.register === 'function' ) {
+      module.register(instance, packages[path]);
+
+      return false;
+    } else if ( typeof module._onServerStart === 'function' ) {
+      // Backward compatible with old API
+      module._onServerStart(server, _createOldInstance(instance), packages[path]);
+    }
+
+    return true;
+  }
+
+  function _registerExtension(module) {
+    if ( typeof module.api === 'object' ) {
+      Object.keys(module.api).forEach(function(k) {
+        instance.API[k] = module.api[k];
+      });
+
+      return false;
+    } else if ( typeof module.register === 'function' ) {
+      // Backward compatible with old API
+      var backAPI = {};
+      module.register(backAPI, {}, _createOldInstance(instance));
+
+      Object.keys(backAPI).forEach(function(k) {
+        instance.API[k] = function(instance, http, resolve, reject, args) {
+          backAPI[k](_createOldInstance(instance), args, function(err, res) {
+            if ( err ) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          });
+        };
+      });
+    }
+
+    return true;
+  }
 
   function _load(resolve, reject) {
     _fs.readFile(path, function(err, file) {
@@ -246,24 +294,17 @@ function registerPackages(server) {
 
       Object.keys(packages).forEach(function(path) {
         const check = _path.join(instance.DIRS.packages, path, 'api.js');
+        const metadata = packages[path];
+
         if ( _fs.existsSync(check) ) {
-          instance.LOGGER.lognt(instance.LOGGER.INFO, '+++', '{ApplicationAPI}', check.replace(instance.DIRS.root, ''));
-          const module = require(check);
 
           var deprecated = false;
-          if ( typeof module.register === 'function' ) {
-            module.register(instance, packages[path]);
-          } else if ( typeof module._onServerStart === 'function' ) {
-            deprecated = true;
-
-            // Backward compatible with old API
-            module._onServerStart(server, {
-              request: null,
-              response: null,
-              config: instance.CONFIG,
-              handler: null,
-              logger: instance.LOGGER
-            }, packages[path]);
+          if ( metadata.type === 'extension' ) {
+            logger().lognt('INFO', 'Loading', logger().colored('Application', 'bold'), check.replace(instance.DIRS.root, ''));
+            deprecated = _registerExtension(require(check));
+          } else {
+            logger().lognt('INFO', 'Loading', logger().colored('Extension', 'bold'), check.replace(instance.DIRS.root, ''));
+            deprecated = _registerApplication(require(check));
           }
 
           if ( typeof module.api === 'undefined' ) {
@@ -271,7 +312,7 @@ function registerPackages(server) {
           }
 
           if ( deprecated ) {
-            instance.LOGGER.lognt(instance.LOGGER.WARNING, instance.LOGGER.colored('THIS PACKAGE IS USING THE DEPRECATED APPLICATION API', 'yellow'));
+            logger().lognt('WARN', '...', path, logger().colored('IS PACKAGE IS USING THE DEPRECATED APPLICATION API', 'yellow'));
           }
         }
       });
@@ -290,7 +331,7 @@ function registerPackages(server) {
 function request(http) {
   // We use JSON as default responses, no matter what
   function _rejectResponse(err) {
-    instance.LOGGER.log(instance.LOGGER.ERROR, instance.LOGGER.colored(err, 'red'), err.stack || '<no stack trace>');
+    logger().log('ERROR', logger().colored(err, 'red'), err.stack || '<no stack trace>');
 
     http.respond.json({
       error: String(err),

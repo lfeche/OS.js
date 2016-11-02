@@ -35,7 +35,6 @@
 // TODO: Mysql Authenticator
 // TODO: Mysql Storage
 // TODO: Protect Filesystem paths
-// TODO: VFS Methods
 
 /**
  * Works using CGI or any other method

@@ -50,6 +50,14 @@ module.exports.create = function createLogger(config, lvl) {
   var ns = {};
   var level = 0;
 
+  const levelMap = {
+    INFO: 1,
+    WARN: 2,
+    WARNING: 2,
+    ERROR: 3,
+    VERBOSE: 8
+  };
+
   /**
    * Check if this message can be logged according to level
    */
@@ -76,6 +84,10 @@ module.exports.create = function createLogger(config, lvl) {
   function _log(stamp, lvl/*, message[, message, ...]*/) {
     if ( typeof stamp !== 'boolean' ) {
       throw new TypeError('log() expects first argument to be a boolean');
+    }
+
+    if ( typeof lvl === 'string' ) {
+      lvl = levelMap[lvl];
     }
 
     if ( typeof lvl !== 'number' ) {

@@ -58,9 +58,38 @@ module.exports.initSession = function(instance, http) {
  * @function checkPermission
  * @memberof lib.auth
  */
-module.exports.checkPermission = function(instance, http, group, options) {
+module.exports.checkPermission = function(instance, http, type, options) {
+  const groups = instance.CONFIG.api.groups;
+
+  function _check(checkGroups, resolve, reject) {
+    if ( typeof checkGroups === 'undefined' ) {
+      checkGroups = true;
+    }
+
+    if ( checkGroups ) {
+      var checks = [];
+      if ( type === 'fs' ) {
+        checks = [type];
+      } else {
+        if ( options.method && typeof groups[options.method] !== 'undefined' ) {
+          checks = [groups[options.method]];
+        }
+      }
+
+      if ( module.exports.hasGroup(instance, http, checks) ) {
+        resolve();
+      } else {
+        reject('Access denied!');
+      }
+    } else {
+      resolve();
+    }
+  }
+
   return new Promise(function(resolve, reject) {
-    instance.AUTH.checkPermission(instance, http, resolve, reject, group, options);
+    instance.AUTH.checkPermission(instance, http, function(checkGroups) {
+      _check(checkGroups, resolve, reject);
+    }, reject, type, options);
   });
 }
 
@@ -85,11 +114,16 @@ module.exports.checkSession = function(instance, http) {
  * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String|Array}     groupList     Group(s)
+ * @param   {Boolean}          [all=false]   Check if all and not some
  *
  * @function hasGroup
  * @memberof lib.auth
  */
-module.exports.hasGroup = function(instance, http, groupList) {
+module.exports.hasGroup = function(instance, http, groupList, all) {
+  if ( !(groupList instanceof Array) || !groupList.length ) {
+    return true;
+  }
+
   var userGroups = [];
   try {
     userGroups = JSON.parse(http.session.get('groups')) || [];
@@ -103,7 +137,8 @@ module.exports.hasGroup = function(instance, http, groupList) {
     groupList = [groupList];
   }
 
-  return groupList.some(function(name) {
+  const m = all ? 'every' : 'some';
+  return groupList[m](function(name) {
     if ( userGroups.indexOf(name) !== -1 ) {
       return true;
     }

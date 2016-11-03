@@ -295,9 +295,9 @@ function registerPackages(server) {
     if ( metadata.spawn && metadata.spawn.enabled ) {
       const spawner = _path.join(instance.DIRS.packages, pn, metadata.spawn.exec);
       logger().lognt('INFO', 'Launching', logger().colored('Spawner', 'bold'), spawner.replace(instance.DIRS.root, ''));
-      children.push(_child.fork(spawner), [], {
+      children.push(_child.fork(spawner, [], {
         stdio: 'pipe'
-      });
+      }));
     }
   }
 
@@ -366,8 +366,10 @@ function request(http) {
 
   // Wrapper for checking permissions
   function _checkPermission(type, options) {
+    const skip = type === 'api' && ['login'].indexOf(options.method) !== -1;
+
     return new Promise(function(resolve, reject) {
-      if ( type === 'api' && options.method === 'login' ) {
+      if ( skip ) {
         resolve();
       } else {
         _osjs.auth.checkSession(instance, http).then(function() {
@@ -376,16 +378,20 @@ function request(http) {
       }
     }).then(function() {
       return new Promise(function(resolve, reject) {
-        _osjs.auth.checkPermission(instance, http, type, options).then(function() {
+        if ( skip ) {
           resolve();
-        }).catch(_rejectResponse);
+        } else {
+          _osjs.auth.checkPermission(instance, http, type, options).then(function() {
+            resolve();
+          }).catch(_rejectResponse);
+        }
       });
     }).catch(_rejectResponse);
   }
 
   // Wrappers for performing API calls
   function _vfsCall() {
-    _checkPermission('vfs', {method: http.endpoint.replace(/(^get\/)?/, ''), args: http.data}).then(function() {
+    _checkPermission('fs', {method: http.endpoint.replace(/(^get\/)?/, ''), args: http.data}).then(function() {
       (new Promise(function(resolve, reject) {
         _osjs.vfs.request(instance, http, resolve, reject);
       })).then(_resolveResponse).catch(_rejectResponse);

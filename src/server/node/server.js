@@ -29,8 +29,7 @@
  */
 
 // TODO: Make sure same HTTP error codes are sent as in old codebase
-// TODO: Go over all initialization and events and add proper logging
-// TODO: Add checkPermission for all handlers!
+// TODO: Add checkPermission for all handlers! ???
 // FIXME: Logger is not respecting level from config or init-script ?
 
 /**
@@ -282,6 +281,7 @@ function createHttpObject(request, response, path, data, responder, session_id, 
 /**
  * Create a new OS.js server instance
  */
+var running = false;
 
 const argv = _minimist(process.argv.slice(2));
 const opts = {
@@ -406,6 +406,9 @@ _instance.init(opts, function(instance) {
 
   process.on('uncaughtException', function(error) {
     console.log('UNCAUGHT EXCEPTION', error, error.stack);
+    if ( running ) {
+      process.exit(1);
+    }
   });
 
   return new Promise(function(resolve, reject) {
@@ -421,6 +424,7 @@ _instance.init(opts, function(instance) {
         }
 
         httpServer.listen(instance.PORT);
+        running = true;
 
         logger.log('INFO', logger.colored('Ready...', 'green'));
       }

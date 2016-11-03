@@ -96,7 +96,7 @@ module.exports.initSession = function(instance, http, resolve, reject) {
  * @param   {Object}           options       Permission options/arguments
  */
 module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
-  resolve(true);
+  resolve(true); // Return false to ignore internal group checking
 };
 
 /**

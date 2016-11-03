@@ -46,15 +46,18 @@
 /**
  * An object filled with data regarding the Server request. Also allows you to use a responder to
  * interrupt the normal procedures.
- * @property  {Request}           request     HTTP Request object
- * @property  {Response}          response    HTTP Response object
- * @property  {String}            path        HTTP Request path name (url)
- * @property  {String}            endpoint    Endpoint parsed from path name (url)
- * @property  {Object}            data        POST data (JSON)
- * @property  {Object}            files       POST files (uploads)
- * @property  {Boolean}           isfs        If this is a filesystem operation
- * @property  {ServerSession}     session     HTTP Session
- * @property  {ServerResponder}   respond     Responder object
+ * @property  {http.Server}           _http       Node HTTP server
+ * @property  {ws.Server}             _ws         Node WebSocket server
+ * @property  {ProxyServer}           _proxy      Node Proxy server
+ * @property  {http.ClientRequest}    request     HTTP Request object
+ * @property  {http.ServerResponse}   response    HTTP Response object
+ * @property  {String}                path        HTTP Request path name (url)
+ * @property  {String}                endpoint    Endpoint parsed from path name (url)
+ * @property  {Object}                data        POST data (JSON)
+ * @property  {Object}                files       POST files (uploads)
+ * @property  {Boolean}               isfs        If this is a filesystem operation
+ * @property  {ServerSession}         session     HTTP Session
+ * @property  {ServerResponder}       respond     Responder object
  * @typedef ServerRequest
  */
 
@@ -77,6 +80,10 @@ const _path = require('path');
 const _session = require('simple-session');
 const _formidable = require('formidable');
 const _minimist = require('minimist');
+
+var httpServer = null;
+var websocketServer = null;
+var proxyServer = null;
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
@@ -179,7 +186,11 @@ function createHttpResponder(instance, response) {
     stream.pipe(response);
   }
 
-  return {
+  return Object.freeze({
+    _http: httpServer,
+    _ws: websocketServer,
+    _proxy: proxyServer,
+
     error: _error,
     raw: _raw,
 
@@ -209,7 +220,7 @@ function createHttpResponder(instance, response) {
         }
       });
     }
-  };
+  });
 }
 
 /**
@@ -224,7 +235,11 @@ function createWebsocketResponder(ws, index) {
     ws.send(JSON.stringify(message))
   }
 
-  return {
+  return Object.freeze({
+    _http: httpServer,
+    _ws: websocketServer,
+    _proxy: proxyServer,
+
     raw: function(data) {
       ws.send(data);
     },
@@ -244,14 +259,14 @@ function createWebsocketResponder(ws, index) {
     error: function(error) {
       _json({error: error});
     }
-  };
+  });
 }
 
 /**
  * Creates the `ServerRequest` object passed around.
  */
 function createHttpObject(request, response, path, data, responder, session_id, files) {
-  return {
+  return Object.freeze({
     request: request,
     response: request,
     path: path,
@@ -270,7 +285,7 @@ function createHttpObject(request, response, path, data, responder, session_id, 
         return v !== false ? v[0] : false;
       }
     }
-  };
+  });
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -295,10 +310,6 @@ _instance.init(opts, function(instance) {
 
   const httpConfig = instance.CONFIG.http || {};
   const logger = instance.LOGGER;
-
-  var httpServer = null;
-  var websocketServer = null;
-  var proxyServer = null;
 
   function onRequest(request, response) {
     const rurl = request.url === '/' ? '/index.html' : request.url;

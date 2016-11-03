@@ -28,7 +28,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Make sure same HTTP error codes are sent as in old codebase
 // FIXME: Logger is not respecting level from config or init-script ?
 
 /**

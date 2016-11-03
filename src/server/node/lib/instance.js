@@ -49,6 +49,7 @@
  * @property  {Object}        AUTH        The Authentication module
  * @property  {Object}        STORAGE     The Storage module
  * @property  {Object}        DIRS        Directories tuple
+ * @property  {Object}        PACKAGES    The package list
  * @typedef ServerInstance
  */
 
@@ -76,6 +77,7 @@ const instance = {
   CONFIG: {},
   API: {},
   VFS: [],
+  PACKAGES: {},
   AUTH: null,
   STORAGE: null,
   DIRS: {
@@ -311,11 +313,17 @@ function registerPackages(server) {
       const packages = manifest[instance.DIST];
 
       Object.keys(packages).forEach(function(path) {
-        const check = _path.join(instance.DIRS.packages, path, 'api.js');
         const metadata = packages[path];
 
-        if ( metadata.enabled !== false && _fs.existsSync(check) ) {
+        var filename = 'api.js';
+        if ( metadata.build && metadata.build.index ) {
+          filename = _path.resolve(metadata.build.index);
+        }
 
+        metadata._indexFile = filename;
+
+        const check = _path.join(instance.DIRS.packages, path, filename);
+        if ( metadata.enabled !== false && _fs.existsSync(check) ) {
           var deprecated = false;
           if ( metadata.type === 'extension' ) {
             logger().lognt('INFO', 'Loading', logger().colored('Application', 'bold'), check.replace(instance.DIRS.root, ''));
@@ -335,6 +343,8 @@ function registerPackages(server) {
           }
         }
       });
+
+      instance.PACKAGES = Object.freeze(packages);
 
       resolve();
     });

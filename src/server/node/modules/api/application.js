@@ -55,8 +55,11 @@ module.exports.application = function(instance, http, resolve, reject) {
   const ameth = http.data.method || null;
   const aargs = http.data['arguments'] || {};
 
+  const manifest = instance.PACKAGES[apath] || {};
+  const filename = manifest && manifest._indexFile ? manifest._indexFile : 'api.js';
+
   const aroot = _path.join(instance.DIRS.packages, apath);
-  const fpath = _path.join(aroot, 'api.js');
+  const fpath = _path.join(aroot, filename);
 
   var found = null;
 

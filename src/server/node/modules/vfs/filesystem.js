@@ -66,7 +66,7 @@ function resolveRequestPath(instance, http, query) {
   return {
     query: query,
     protocol: protocol,
-    path: path,
+    path: protocol + '://' + path,
     real: real
   };
 }

@@ -375,12 +375,12 @@ function request(http) {
     logger().log('ERROR', logger().colored(err, 'red'), err.stack || '<no stack trace>');
 
     if ( !http.isfs && !http.isapi ) {
-      http.respond.error(err);
+      http.respond.error(err, 403);
     } else {
       http.respond.json({
         error: String(err),
         result: false
-      }, 500);
+      }, 403);
     }
   }
   function _resolveResponse(result) {

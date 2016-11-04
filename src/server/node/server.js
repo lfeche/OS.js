@@ -31,7 +31,6 @@
 // FIXME: Logger is not respecting level from config or init-script ?
 
 const _instance = require('./lib/instance.js');
-const _http = require('./lib/http.js');
 const _minimist = require('minimist');
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -66,7 +66,7 @@ function resolveRequestPath(instance, http, query) {
   return {
     query: query,
     protocol: protocol,
-    path: protocol + '://' + path,
+    path: protocol + '://' + path.replace(/^\/?/, '/'),
     real: real
   };
 }
@@ -138,17 +138,18 @@ function createFileIter(instance, query, real, iter, stat) {
   }
 
   var mime = '';
+  const filename = iter ? iter : _path.basename(query);
   const type = stat.isFile() ? 'file' : 'dir';
 
   if ( type === 'file' ) {
-    mime = _vfs.getMime(instance, iter);
+    mime = _vfs.getMime(instance, filename);
   }
 
   const perm = _utils.permissionToString(stat.mode);
 
   return {
-    filename: iter,
-    path: query + iter.replace(/^\/?/, '/'),
+    filename: filename,
+    path: iter ? query + iter.replace(/^\/?/, '/') : query,
     size: stat.size || 0,
     mime: mime,
     type: type,
@@ -208,7 +209,9 @@ const VFS = {
 
   exists: function(instance, http, args, resolve, reject) {
     const resolved = resolveRequestPath(instance, http, args.path);
-    existsWrapper(true, resolved.real, resolve, reject);
+    _fs.exists(resolved.real, function(exists) {
+      resolve(exists);
+    });
   },
 
   read: function(instance, http, args, resolve, reject) {
@@ -234,8 +237,8 @@ const VFS = {
         if ( e ) {
           reject(e);
         } else {
-          const data = 'data:' + mime + ';base64,' + (new Buffer(data).toString('base64'));
-          resolve(data.toString());
+          const enc = 'data:' + mime + ';base64,' + (new Buffer(data).toString('base64'));
+          resolve(enc.toString());
         }
       });
     }
@@ -421,15 +424,17 @@ const VFS = {
 
     find.on('directory', function(dir, stat) {
       const filename = _path.basename(dir).toLowerCase();
+      const fpath = resolved.path + dir.substr(resolved.real.length).replace(/^\//, '');
       if ( filename.indexOf(query) !== -1 ) {
-        list.push(createFileIter(instance, args.path, resolved.real, dir, stat));
+        list.push(createFileIter(instance, fpath, resolved.real, null, stat));
       }
     });
 
     find.on('file', function(file, stat) {
       const filename = _path.basename(file).toLowerCase();
+      const fpath = resolved.path + file.substr(resolved.real.length).replace(/^\//, '');
       if ( filename.indexOf(query) !== -1 ) {
-        list.push(createFileIter(instance, args.path, resolved.real, file, stat));
+        list.push(createFileIter(instance, fpath, resolved.real, null, stat));
       }
     });
 
@@ -446,7 +451,7 @@ const VFS = {
     const resolved = resolveRequestPath(instance, http, args.path);
 
     existsWrapper(false, resolved.real, function() {
-      const info = createFileIter(instance, args.path, resolved.real, _path.basename(resolved.real));
+      const info = createFileIter(instance, resolved.path, resolved.real, null);
       const mime = _vfs.getMime(instance, resolved.real);
 
       readExif(resolved.real, mime).then(function(result) {

@@ -57,6 +57,14 @@ class Instance
   final protected static function _loadConfiguration() {
     self::$CONFIG = json_decode(file_get_contents(DIR_SERVER . '/settings.json'));
     self::$PACKAGES = json_decode(file_get_contents(DIR_SERVER . '/packages.json'), true);
+
+    if ( isset(self::$CONFIG->tz) ) {
+      date_default_timezone_set(self::$CONFIG->tz);
+    }
+
+    if ( !date_default_timezone_get() ) {
+      date_default_timezone_set('UTC');
+    }
   }
 
   /**
@@ -137,7 +145,11 @@ class Instance
    * Startup handler
    */
   final public static function run() {
-    date_default_timezone_set('Europe/Oslo');
+    $root = basename(getcwd());
+    if ( in_array($root, ['dist', 'dist-dev']) ) {
+      self::$DIST = $root;
+    }
+
     register_shutdown_function([__CLASS__, 'shutdown']);
 
     define('DIR_ROOT', realpath(__DIR__ . '/../../../../'));

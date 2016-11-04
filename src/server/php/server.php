@@ -34,13 +34,10 @@
 // TODO: Protect Filesystem paths
 // TODO: Package management
 // TODO: User management
-// TODO: Detect dist
 
 /**
- * Works using CGI or any other method
- * To use with PHP Internal Webserver:
- *  To use with `php -S localhost:8000 src/server/php/server.php'
- *  in the directory dist/
+ * Works using CGI or any other method:
+ * `php -S localhost:8000 ../src/server/php/server.php' in the directory dist/
  */
 ini_set('always_populate_raw_post_data', 1);
 ini_set('display_startup_errors', 1);

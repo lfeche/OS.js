@@ -50,6 +50,10 @@ _instance.init(opts).then(function(instance) {
   const logger = instance.LOGGER;
   const httpConfig = instance.CONFIG.http || {};
 
+  if ( instance.CONFIG.tz ) {
+    process.env.TZ = instance.CONFIG.tz;
+  }
+
   process.on('exit', function() {
     _instance.destroy();
   });

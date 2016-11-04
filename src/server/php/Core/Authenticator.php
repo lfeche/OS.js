@@ -29,11 +29,96 @@
  * @licence Simplified BSD License
  */
 
+use OSjs\Core\Instance;
+use OSjs\Core\Request;
+use OSjs\Core\Storage;
+use OSjs\Core\VFS;
+
 class Authenticator
 {
   protected static $INSTANCE;
 
   protected function __construct() {
+  }
+
+  public static function CheckPermissions(Request $request, $type, Array $options = []) {
+    $authenticator = self::getInstance();
+
+    if ( !$authenticator->checkSession($request) ) {
+      $error = 'You have no OS.js Session, please log in!';
+      if ( ($request->isfs && $request->endpoint !=  'read') || $request->isapi ) {
+        $request->respond()->json([
+          'error' => $error
+        ], 403);
+      } else {
+        $request->respond()->error($error, 403);
+      }
+    }
+
+    if ( !$authenticator->checkPermission($request, $type, $options) ) {
+      $error = 'Access denied!';
+      if ( ($request->isfs && $request->endpoint !=  'read') || $request->isapi ) {
+        $request->respond()->json([
+          'error' => $error
+        ], 403);
+      } else {
+        $request->respond()->error($error, 403);
+      }
+    }
+  }
+
+  public function checkSession(Request $request) {
+    if ( $request->isapi && in_array($request->endpoint, ['login']) ) {
+      return true;
+    }
+    return isset($_SESSION['username']);
+  }
+
+  public function checkPermission(Request $request, $type, Array $options = []) {
+    if ( $type === 'package' ) {
+      $blacklist = Storage::getInstance()->getBlacklist($request);
+      return !in_array($options['path'], $blacklist);
+    }
+
+    $checks = [];
+    $config = Instance::getConfig();
+
+    if ( $type === 'fs' ) {
+      $checks = ['fs'];
+      $protocol = VFS::getProtocol($options['arguments']);
+
+      if ( $fsgroups = (array)$config->vfs->groups ) {
+        if ( isset($fsgroups[$protocol]) ) {
+          $g = $fsgroups[$protocol];
+          $checks[] += is_array($g) ? $g : [$g];
+        }
+      }
+
+      $mounts = (array) $config->vfs->mounts;
+      if ( isset($mounts[$protocol]) && is_array($mounts[$protocol]) && isset($mounts[$protocol]['ro']) ) {
+        if ( $mounts[$protocol]['ro'] && VFS::IsWritableEndpoint($request->endpoint) ) {
+          return false;
+        }
+      }
+
+    } else if ( $type === 'api' ) {
+      $apigroups = (array)$config->api->groups;
+      if ( isset($apigroups[$request->endpoint]) ) {
+        $g = $apigroups[$request->endpoint];
+        $checks = is_array($g) ? $g : [$g];
+      }
+    }
+
+    if ( $checks ) {
+      $groups = isset($_SESSION['groups']) ? $_SESSION['groups'] : [];
+      if ( in_array('admin', $groups) ) {
+        return true;
+      } else if ( sizeof(array_diff($groups, $checks)) ) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public static function getInstance() {

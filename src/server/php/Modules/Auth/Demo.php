@@ -46,7 +46,15 @@ class Demo extends Authenticator
   }
 
   final public function logout(Request $request) {
-    return true;
+    return parent::logout($request);
+  }
+
+  final public function checkSession(Request $request) {
+    return parent::checkSession($request);
+  }
+
+  final public function checkPermission(Request $request, $type, Array $options = []) {
+    return parent::checkPermission($request, $type, $options);
   }
 
 }

@@ -29,9 +29,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Permissions
-// TODO: VFS Permissions
-// TODO: API Permissions
 // TODO: Mysql Authenticator
 // TODO: Mysql Storage
 // TODO: Protect Filesystem paths
@@ -55,7 +52,6 @@ spl_autoload_register(function($name) {
   if ( file_exists($path) ) {
     require $path;
   }
-
 });
 
 use OSjs\Core\Instance;

@@ -114,7 +114,7 @@ module.exports.checkSession = function(instance, http) {
  * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String|Array}     groupList     Group(s)
- * @param   {Boolean}          [all=false]   Check if all and not some
+ * @param   {Boolean}          [all=true]    Check if all and not some
  *
  * @function hasGroup
  * @memberof lib.auth
@@ -137,7 +137,7 @@ module.exports.hasGroup = function(instance, http, groupList, all) {
     groupList = [groupList];
   }
 
-  const m = all ? 'every' : 'some';
+  const m = (typeof all === 'undefined' || all) ? 'every' : 'some';
   return groupList[m](function(name) {
     if ( userGroups.indexOf(name) !== -1 ) {
       return true;

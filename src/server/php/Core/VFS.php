@@ -31,31 +31,53 @@
 
 use OSjs\Core\Instance;
 
-class Storage
+abstract class VFS
 {
-  protected static $INSTANCE;
+  protected static $WRITEABLE = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
 
-  protected function __construct() {
+  final public static function IsWritableEndpoint($endpoint) {
+    return in_array($endpoint, self::$WRITEABLE);
   }
 
-  public function getSettings(Request $request) {
-    return [];
-  }
+  /**
+   * Get Transport VFS module from given path
+   */
+  final public static function GetTransportFromPath($args) {
+    $mounts = (array) (Instance::getConfig()->vfs->mounts ?: []);
 
-  public function setSettings(Request $request) {
-    return true;
-  }
+    if ( $protocol = VFS::getProtocol($args) ) {
+      $transport = 'filesystem';
 
-  public function getBlacklist(Request $request) {
-    return [];
-  }
+      if ( isset($mounts[$protocol]) ) {
+        if ( is_array($mounts[$protocol]) && isset($mounts[$protocol]['transport']) ) {
+          $transport = $mounts[$protocol]['transport'];
+        }
+      }
 
-  public static function getInstance() {
-    if ( !self::$INSTANCE ) {
-      $name = Instance::getConfig()->http->storage;
-      $name = 'OSjs\\Modules\\Storage\\' . ucfirst($name);
-      self::$INSTANCE = new $name();
+      foreach ( Instance::getVFSModules() as $className ) {
+        if ( $className::TRANSPORT === $transport ) {
+          return $className;
+        }
+      }
     }
-    return self::$INSTANCE;
+
+    return null;
+  }
+
+  public static function getProtocol($args) {
+    $path = is_string($args) ? $args : null;
+
+    if ( is_array($args) ) {
+      $checks = ['path', 'src'];
+      foreach ( $checks as $c ) {
+        if ( isset($args[$c]) ) {
+          $path = $args[$c];
+          break;
+        }
+      }
+    }
+
+    $parts = explode(':', $path, 2);
+    return $parts[0];
   }
 }

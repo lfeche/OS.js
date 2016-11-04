@@ -28,6 +28,8 @@
  * @licence Simplified BSD License
  */
 
+// TODO: Check blacklisted packages
+
 const _instance = require('./lib/instance.js');
 const _minimist = require('minimist');
 

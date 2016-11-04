@@ -96,9 +96,11 @@ class Responder
    * Respond with error
    */
   public function error($message, $code = 500) {
+    /*
     if ( php_sapi_name() === "cli-server" ) {
       return false;
     }
+     */
     return $this->raw($message, $code);
   }
 }

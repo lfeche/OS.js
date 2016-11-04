@@ -31,6 +31,8 @@
 
 use OSjs\Core\Request;
 use OSjs\Core\Responder;
+use OSjs\Core\Authenticator;
+use OSjs\Core\VFS;
 
 use Exception;
 
@@ -114,44 +116,11 @@ class Instance
     return self::$DIST;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // MISC
-  /////////////////////////////////////////////////////////////////////////////
-
   /**
-   * Get Transport VFS module from given path
+   * Gets the VFS modules
    */
-  final public static function getTransportFromPath($args) {
-    $checks = ['path', 'src'];
-    $mounts = (array) (self::$CONFIG->vfs->mounts ?: []);
-    $path = null;
-
-    foreach ( $checks as $c ) {
-      if ( isset($args[$c]) ) {
-        $path = $args[$c];
-        break;
-      }
-    }
-
-    if ( $path !== null ) {
-      $parts = explode(':', $path, 2);
-      $protocol = $parts[0];
-      $transport = 'filesystem';
-
-      if ( isset($mounts[$protocol]) ) {
-        if ( is_array($mounts[$protocol]) && isset($mounts[$protocol]['transport']) ) {
-          $transport = $mounts[$protocol]['transport'];
-        }
-      }
-
-      foreach ( self::$VFS as $className ) {
-        if ( $className::TRANSPORT === $transport ) {
-          return $className;
-        }
-      }
-    }
-
-    return null;
+  final public static function getVFSModules() {
+    return self::$VFS;
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -203,7 +172,10 @@ class Instance
       }
 
       try {
-        $transport = self::getTransportFromPath($args);
+        $transport = VFS::GetTransportFromPath($args);
+
+        Authenticator::CheckPermissions($request, 'fs', ['method' => $endpoint, 'arguments' => $args]);
+
         if ( is_callable($transport, $request->endpoint) ) {
           $result = call_user_func_array([$transport, $endpoint], [$request, $args]);
           $request->respond()->json([
@@ -223,6 +195,8 @@ class Instance
         ], 500);
       }
     } else if ( $request->isapi && $request->method === 'POST' ) {
+      Authenticator::CheckPermissions($request, 'api', ['method' => $request->endpoint]);
+
       if ( isset(self::$API[$request->endpoint]) ) {
         try {
           $result = call_user_func_array([self::$API[$request->endpoint], $request->endpoint], [$request]);
@@ -244,6 +218,11 @@ class Instance
         ], 500);
       }
     } else {
+      if ( preg_match('/^\/?packages\/(.*\/.*)\/(.*)/', $request->url, $matches) ) {
+        if ( !Authenticator::getInstance()->checkPermission($request, 'package', ['path' => $matches[1]]) ) {
+          $request->respond()->error('Permission denied!', 403);
+        }
+      }
       $request->respond()->file(DIR_DIST . $request->url);
     }
 

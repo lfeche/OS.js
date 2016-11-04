@@ -58,7 +58,7 @@ class Instance
     self::$CONFIG = json_decode(file_get_contents(DIR_SERVER . '/settings.json'));
     self::$PACKAGES = json_decode(file_get_contents(DIR_SERVER . '/packages.json'), true);
 
-    if ( isset(self::$CONFIG->tz) ) {
+    if ( !empty(self::$CONFIG->tz) ) {
       date_default_timezone_set(self::$CONFIG->tz);
     }
 
@@ -204,7 +204,7 @@ class Instance
         $request->respond()->json([
           'error' => $e->getMessage(),
           'result' => null
-        ], 500);
+        ]);
       }
     } else if ( $request->isapi && $request->method === 'POST' ) {
       Authenticator::CheckPermissions($request, 'api', ['method' => $request->endpoint]);
@@ -221,7 +221,7 @@ class Instance
           $request->respond()->json([
             'error' => $e->getMessage(),
             'result' => null
-          ], 500);
+          ]);
         }
       } else {
         $request->respond()->json([

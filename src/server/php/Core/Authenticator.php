@@ -82,6 +82,11 @@ class Authenticator
     }
   }
 
+  final public function getConfig() {
+    $name = strtolower(str_replace('OSjs\\Modules\\Auth\\', '', get_class($this)));
+    return Instance::getConfig()->modules->auth->$name;
+  }
+
   public function checkSession(Request $request) {
     if ( $request->isapi && in_array($request->endpoint, ['login']) ) {
       return true;

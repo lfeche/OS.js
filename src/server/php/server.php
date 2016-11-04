@@ -29,9 +29,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Mysql Authenticator
-// TODO: Mysql Storage
-// TODO: Protect Filesystem paths
 // TODO: Package management
 // TODO: User management
 

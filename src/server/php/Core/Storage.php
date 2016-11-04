@@ -50,6 +50,11 @@ class Storage
     return [];
   }
 
+  final public function getConfig() {
+    $name = strtolower(str_replace('OSjs\\Modules\\Storage\\', '', get_class($this)));
+    return Instance::getConfig()->modules->auth->$name;
+  }
+
   public static function getInstance() {
     if ( !self::$INSTANCE ) {
       $name = Instance::GetConfig()->http->storage;

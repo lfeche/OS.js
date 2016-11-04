@@ -56,7 +56,9 @@
 const _child = require('child_process');
 const _fs = require('node-fs-extra');
 const _path = require('path');
+
 const _osjs = {
+  http: require('./http.js'),
   logger: require('./logger.js'),
   auth: require('./auth.js'),
   vfs: require('./vfs.js'),
@@ -350,7 +352,7 @@ function registerPackages(servers) {
 
       instance.PACKAGES = Object.freeze(packages);
 
-      resolve();
+      resolve(servers);
     });
   }
 
@@ -496,32 +498,42 @@ module.exports.destroy = function destroy() {
   children.forEach(function(c) {
     c.kill();
   });
+
+  _osjs.http.destroy();
 };
 
 /**
  * Initializes OS.js Server
  *
  * @param   {ServerOptions}   opts           Server Options
- * @param   {Function}        start          Callback to start the server
  *
  * @function init
  * @memberof lib.osjs
  */
-module.exports.init = function start(opts, start) {
-  function startup() {
-    start(Object.freeze(instance))
-      .then(function(result) {
-        registerPackages(result).then(result.start);
-      }).catch(function(e) {
-        console.error(e.stack, e);
-      });
-  }
-
-  loadConfiguration(opts)
-    .then(loadAPI)
-    .then(loadAuth)
-    .then(loadStorage)
-    .then(loadVFS)
-    .then(startup);
+module.exports.init = function init(opts) {
+  return new Promise(function(resolve, reject) {
+    loadConfiguration(opts)
+      .then(loadAPI)
+      .then(loadAuth)
+      .then(loadStorage)
+      .then(loadVFS)
+      .then(function() {
+        return _osjs.http.init(instance);
+      })
+      .then(registerPackages)
+      .then(function(servers) {
+        resolve(Object.freeze(instance));
+      })
+      .catch(reject);
+  });
 };
 
+/**
+ * Runs the OS.js Server
+ *
+ * @function run
+ * @memberof lib.osjs
+ */
+module.exports.run = function run(port) {
+  return _osjs.http.run(instance.PORT);
+};

@@ -6,5 +6,9 @@
     "browser": true,
     "node": true,
     "mocha": true
-  }
+  },
+  "strict": [
+    0,
+    "function"
+  ]
 }

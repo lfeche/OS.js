@@ -127,8 +127,14 @@ function loadConfiguration(opts) {
         instance.DIRS.root = opts.ROOT;
       }
 
+      if ( typeof opts.LOGLEVEL === 'number' ) {
+        instance.LOGLEVEL = opts.LOGLEVEL;
+      } else if ( typeof config.logging === 'number' ) {
+        instance.LOGLEVEL = config.logging;
+      }
+
       instance.DIRS.packages = _path.join(instance.DIRS.root, 'src/packages');
-      instance.LOGGER = _osjs.logger.create(instance.CONFIG, instance.LOGLEVEL);
+      instance.LOGGER = _osjs.logger.create(instance.LOGLEVEL);
 
       Object.keys(config.proxies).forEach(function(k) {
         instance.LOGGER.lognt('INFO', 'Using', instance.LOGGER.colored('Proxy', 'bold'), k);

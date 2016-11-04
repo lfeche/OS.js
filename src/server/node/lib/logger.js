@@ -46,7 +46,7 @@ function timestamp() {
  *
  * Level -1 is everything, -2 is everything except verbose
  */
-module.exports.create = function createLogger(config, lvl) {
+module.exports.create = function createLogger(lvl) {
   var ns = {};
   var level = 0;
 
@@ -207,20 +207,13 @@ module.exports.create = function createLogger(config, lvl) {
   };
 
   // Make sure we take logging options from cmd/configs
-  var clvl = config.logging;
-  if ( clvl === true || typeof clvl === 'number' ) {
-    if ( typeof clvl === 'number' ) {
-      level = clvl;
-    }
-
-    if ( lvl === -1 ) {
-      level = ns.INFO | ns.WARNING | ns.ERROR | ns.VERBOSE;
-    } else if ( lvl === -2 ) {
-      level = ns.INFO | ns.WARNING | ns.ERROR;
-    }
+  if ( lvl === -1 ) {
+    level = ns.INFO | ns.WARNING | ns.ERROR | ns.VERBOSE;
+  } else if ( lvl === -2 ) {
+    level = ns.INFO | ns.WARNING | ns.ERROR;
+  } else {
+    level = lvl;
   }
-
-  level = ns.INFO | ns.WARNING | ns.ERROR | ns.VERBOSE; // FIXME
 
   ns.lognt(ns.INFO, 'Loading', ns.colored('Logger', 'bold'), 'with level', level);
 

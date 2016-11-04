@@ -29,6 +29,7 @@
  */
 
 // TODO: Check blacklisted packages
+// TODO: Nullify session on logout
 
 const _instance = require('./lib/instance.js');
 const _minimist = require('minimist');

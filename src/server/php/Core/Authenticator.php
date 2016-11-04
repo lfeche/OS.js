@@ -34,11 +34,26 @@ use OSjs\Core\Request;
 use OSjs\Core\Storage;
 use OSjs\Core\VFS;
 
+use Exception;
+
 class Authenticator
 {
   protected static $INSTANCE;
 
   protected function __construct() {
+  }
+
+  public function login(Request $request) {
+    throw new Exception('Invalid login handle');
+  }
+
+  public function logout(Request $request) {
+    foreach ( array_keys($_SESSION) as $k ) {
+      unset($_SESSION[$k]);
+    }
+
+    return true;
+    return parent::logout($request);
   }
 
   public static function CheckPermissions(Request $request, $type, Array $options = []) {

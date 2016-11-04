@@ -238,7 +238,7 @@ function loadVFS() {
 /**
  * Loads generated package manifest
  */
-function registerPackages(server) {
+function registerPackages(servers) {
   const path = _path.join(instance.DIRS.server, 'packages.json');
   logger().lognt('INFO', 'Loading', logger().colored('Configuration', 'bold'), path.replace(instance.DIRS.root, ''));
 
@@ -254,12 +254,16 @@ function registerPackages(server) {
 
   function _registerApplication() {
     if ( typeof module.register === 'function' ) {
-      module.register(instance, packages[path]);
+      module.register(instance, packages[path], {
+        http: servers.httpServer,
+        ws: servers.websocketServer,
+        proxy: servers.proxyServer
+      });
 
       return false;
     } else if ( typeof module._onServerStart === 'function' ) {
       // Backward compatible with old API
-      module._onServerStart(server, _createOldInstance(instance), packages[path]);
+      module._onServerStart(server.httpServer, _createOldInstance(instance), packages[path]);
     }
 
     return true;
@@ -507,7 +511,7 @@ module.exports.init = function start(opts, start) {
   function startup() {
     start(Object.freeze(instance))
       .then(function(result) {
-        registerPackages(result.httpServer).then(result.start);
+        registerPackages(result).then(result.start);
       }).catch(function(e) {
         console.error(e.stack, e);
       });

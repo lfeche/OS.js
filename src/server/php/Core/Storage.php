@@ -1,4 +1,4 @@
-<?php namespace OSjs;
+<?php namespace OSjs\Core;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,46 +29,21 @@
  * @licence Simplified BSD License
  */
 
-use OSjs\Instance;
+use OSjs\Core\Instance;
 
-/**
- * Collection of Utility function
- */
-abstract class Utils
+class Storage
 {
-  /**
-   * Gets MIME from path
-   */
-  final public static function getMIME($fname) {
-    if ( function_exists('pathinfo') ) {
-      if ( $ext = pathinfo($fname, PATHINFO_EXTENSION) ) {
-        $ext = strtolower($ext);
-        $mime = (array)Instance::getConfig()->mimes;
-        if ( isset($mime[".{$ext}"]) ) {
-          return $mime[".{$ext}"];
-        }
-      }
-    }
+  protected static $INSTANCE;
 
-    if ( function_exists('finfo_open') ) {
-      $finfo = finfo_open(FILEINFO_MIME_TYPE);
-      $mime = finfo_file($finfo, $fname);
-      finfo_close($finfo);
-      return $mime;
-    }
-
-    return null;
+  protected function __construct() {
   }
 
-  final public static function rmdir($dir) {
-    if (!is_dir($dir) || is_link($dir)) return unlink($dir);
-    foreach (scandir($dir) as $file) {
-      if ($file == '.' || $file == '..') continue; 
-      if (!destroy_dir($dir . DIRECTORY_SEPARATOR . $file)) {
-        chmod($dir . DIRECTORY_SEPARATOR . $file, 0777);
-        if (!destroy_dir($dir . DIRECTORY_SEPARATOR . $file)) return false;
-      }
+  public static function getInstance() {
+    if ( !self::$INSTANCE ) {
+      $name = Instance::getConfig()->http->storage;
+      $name = 'OSjs\\Modules\\Storage\\' . ucfirst($name);
+      self::$INSTANCE = new $name();
     }
-    return rmdir($dir);
+    return self::$INSTANCE;
   }
 }

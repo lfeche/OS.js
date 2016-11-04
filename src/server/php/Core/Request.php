@@ -1,4 +1,4 @@
-<?php namespace OSjs;
+<?php namespace OSjs\Core;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,7 +29,7 @@
  * @licence Simplified BSD License
  */
 
-use OSjs\Responder;
+use OSjs\Core\Responder;
 
 /**
  * HTTP Request containers

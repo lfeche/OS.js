@@ -1,4 +1,4 @@
-<?php namespace OSjs\VFS;
+<?php namespace OSjs\Modules\VFS;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,9 +29,9 @@
  * @licence Simplified BSD License
  */
 
-use OSjs\Instance;
-use OSjs\Request;
-use OSjs\Utils;
+use OSjs\Core\Instance;
+use OSjs\Core\Request;
+use OSjs\Core\Utils;
 
 use Exception;
 
@@ -273,5 +273,3 @@ abstract class Filesystem
     return disk_free_space($path);
   }
 }
-
-\OSjs\Instance::registerVFS('OSjs\VFS\Filesystem');

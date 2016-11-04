@@ -1,4 +1,4 @@
-<?php namespace OSjs\Core;
+<?php namespace OSjs\Modules\Auth;
 
 /*!
  * OS.js - JavaScript Operating System
@@ -30,21 +30,23 @@
  * @licence Simplified BSD License
  */
 
-use OSjs\Request;
+use OSjs\Core\Request;
+use OSjs\Core\Authenticator;
 
-abstract class Storage
+class Demo extends Authenticator
 {
 
-  public static function getSettings(Request $request) {
-    return [];
+  final public function login(Request $request) {
+    return [
+      'id'  => 0,
+      'username' => 'demo',
+      'name' => 'Demo',
+      'groups' => ['admin']
+    ];
   }
 
-  public static function setSettings(Request $request) {
+  final public function logout(Request $request) {
     return true;
-  }
-
-  public static function getBlacklist(Request $request) {
-    return [];
   }
 
 }

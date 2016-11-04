@@ -1,4 +1,4 @@
-<?php
+<?php namespace OSjs\Core;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,34 +29,46 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Permissions
-// TODO: VFS Permissions
-// TODO: API Permissions
-// TODO: Mysql Authenticator
-// TODO: Mysql Storage
-// TODO: Protect Filesystem paths
+use OSjs\Core\Instance;
 
 /**
- * Works using CGI or any other method
- * To use with PHP Internal Webserver:
- *  To use with `php -S localhost:8000 src/server/php/server.php'
- *  in the directory dist/
+ * Collection of Utility function
  */
-ini_set('always_populate_raw_post_data', 1);
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
+abstract class Utils
+{
+  /**
+   * Gets MIME from path
+   */
+  final public static function getMIME($fname) {
+    if ( function_exists('pathinfo') ) {
+      if ( $ext = pathinfo($fname, PATHINFO_EXTENSION) ) {
+        $ext = strtolower($ext);
+        $mime = (array)Instance::getConfig()->mimes;
+        if ( isset($mime[".{$ext}"]) ) {
+          return $mime[".{$ext}"];
+        }
+      }
+    }
 
-spl_autoload_register(function($name) {
-  $name = str_replace('\\', '/', $name);
-  $name = preg_replace('/^OSjs\//', '', $name);
-  $path = __DIR__ . '/' . $name . '.php';
+    if ( function_exists('finfo_open') ) {
+      $finfo = finfo_open(FILEINFO_MIME_TYPE);
+      $mime = finfo_file($finfo, $fname);
+      finfo_close($finfo);
+      return $mime;
+    }
 
-  if ( file_exists($path) ) {
-    require $path;
+    return null;
   }
 
-});
-
-use OSjs\Core\Instance;
-Instance::run();
+  final public static function rmdir($dir) {
+    if (!is_dir($dir) || is_link($dir)) return unlink($dir);
+    foreach (scandir($dir) as $file) {
+      if ($file == '.' || $file == '..') continue; 
+      if (!destroy_dir($dir . DIRECTORY_SEPARATOR . $file)) {
+        chmod($dir . DIRECTORY_SEPARATOR . $file, 0777);
+        if (!destroy_dir($dir . DIRECTORY_SEPARATOR . $file)) return false;
+      }
+    }
+    return rmdir($dir);
+  }
+}

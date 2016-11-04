@@ -1,4 +1,4 @@
-<?php namespace OSjs\API;
+<?php namespace OSjs\Modules\API;
 
 /*!
  * OS.js - JavaScript Operating System
@@ -30,21 +30,25 @@
  * @licence Simplified BSD License
  */
 
-use OSjs\Request;
-use OSjs\Core\Storage;
+use OSjs\Core\Instance;
 use OSjs\Core\Authenticator;
+use OSjs\Core\Request;
+use OSjs\Core\Storage;
 
 use Exception;
 
 /**
  * Core API methods
  */
-abstract class CoreAPI
+abstract class Core
 {
   public static function login(Request $request) {
-    $userData = Authenticator::login($request);
-    $userSettings = Storage::getSettings($request);
-    $blacklist = Storage::getBlacklist($request);
+    $authenticator = Authenticator::getInstance();
+    $userData = $authenticator->login($request);
+
+    $storage = Storage::getInstance();
+    $userSettings = $storage->getSettings($request);
+    $blacklist = $storage->getBlacklist($request);
 
     $_SESSION['username'] = $userData['username'];
     $_SESSION['groups'] = $userData['groups'];;
@@ -61,7 +65,7 @@ abstract class CoreAPI
   }
 
   public static function settings(Request $request) {
-    return Storage::setSettings($request);
+    return Storage::getInstance()->setSettings($request);
   }
 
   public static function users(Request $request) {
@@ -93,7 +97,7 @@ abstract class CoreAPI
     if ( $request->data['command'] === 'list' ) {
       $request->respond()->json([
         'error' => null,
-        'result' => \OSjs\Instance::getPackages()
+        'result' => Instance::getPackages()
       ]);
     }
 
@@ -161,5 +165,3 @@ abstract class CoreAPI
   }
 }
 
-
-\OSjs\Instance::registerAPI('OSjs\API\CoreAPI');

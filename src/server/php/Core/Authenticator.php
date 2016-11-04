@@ -1,4 +1,4 @@
-<?php
+<?php namespace OSjs\Core;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,34 +29,19 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Permissions
-// TODO: VFS Permissions
-// TODO: API Permissions
-// TODO: Mysql Authenticator
-// TODO: Mysql Storage
-// TODO: Protect Filesystem paths
+class Authenticator
+{
+  protected static $INSTANCE;
 
-/**
- * Works using CGI or any other method
- * To use with PHP Internal Webserver:
- *  To use with `php -S localhost:8000 src/server/php/server.php'
- *  in the directory dist/
- */
-ini_set('always_populate_raw_post_data', 1);
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
-
-spl_autoload_register(function($name) {
-  $name = str_replace('\\', '/', $name);
-  $name = preg_replace('/^OSjs\//', '', $name);
-  $path = __DIR__ . '/' . $name . '.php';
-
-  if ( file_exists($path) ) {
-    require $path;
+  protected function __construct() {
   }
 
-});
-
-use OSjs\Core\Instance;
-Instance::run();
+  public static function getInstance() {
+    if ( !self::$INSTANCE ) {
+      $name = Instance::getConfig()->http->authenticator;
+      $name = 'OSjs\\Modules\\Auth\\' . ucfirst($name);
+      self::$INSTANCE = new $name();
+    }
+    return self::$INSTANCE;
+  }
+}

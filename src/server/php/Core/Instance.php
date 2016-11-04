@@ -1,4 +1,4 @@
-<?php namespace OSjs;
+<?php namespace OSjs\Core;
 /*!
  * OS.js - JavaScript Operating System
  *
@@ -29,8 +29,8 @@
  * @licence Simplified BSD License
  */
 
-use OSjs\Request;
-use OSjs\Responder;
+use OSjs\Core\Request;
+use OSjs\Core\Responder;
 
 use Exception;
 
@@ -61,40 +61,30 @@ class Instance
    * Loads API methods
    */
   final protected static function _loadAPI() {
-    $path = DIR_SELF . '/modules/api/';
+    $path = DIR_SELF . '/Modules/API/';
     foreach ( scandir($path) as $file ) {
       if ( substr($file, 0, 1) !== '.' ) {
         require($path . $file);
+
+        $className = 'OSjs\\Modules\\API\\' . pathinfo($file, PATHINFO_FILENAME);
+        foreach ( get_class_methods($className) as $methodName ) {
+          self::$API[$methodName] = $className;
+        }
       }
     }
-  }
-
-  /**
-   * Loads Authenticator
-   */
-  final protected static function _loadAuth() {
-    $name = self::$CONFIG->http->authenticator;
-    $path = DIR_SELF . '/modules/auth/' . $name . '.php';
-    require($path);
-  }
-
-  /**
-   * Loads Storage
-   */
-  final protected static function _loadStorage() {
-    $name = self::$CONFIG->http->storage;
-    $path = DIR_SELF . '/modules/storage/' . $name . '.php';
-    require($path);
   }
 
   /**
    * Loads VFS Transports
    */
   final protected static function _loadVFS() {
-    $path = DIR_SELF . '/modules/vfs/';
+    $path = DIR_SELF . '/Modules/VFS/';
     foreach ( scandir($path) as $file ) {
       if ( substr($file, 0, 1) !== '.' ) {
         require($path . $file);
+
+        $className = 'OSjs\\Modules\\VFS\\' . pathinfo($file, PATHINFO_FILENAME);
+        self::$VFS[] = $className;
       }
     }
   }
@@ -122,26 +112,6 @@ class Instance
    */
   final public static function getDist() {
     return self::$DIST;
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // REGISTRATORS
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Adds API methods to the registry
-   */
-  final public static function registerAPI($className) {
-    foreach ( get_class_methods($className) as $methodName ) {
-      self::$API[$methodName] = $className;
-    }
-  }
-
-  /**
-   * Adds VFS transports to the registry
-   */
-  final public static function registerVFS($className) {
-    self::$VFS[] = $className;
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -199,7 +169,7 @@ class Instance
    */
   final public static function run() {
     date_default_timezone_set('Europe/Oslo');
-    register_shutdown_function(Array('\\OSjs\\Instance', 'shutdown'));
+    register_shutdown_function([__CLASS__, 'shutdown']);
 
     define('DIR_ROOT', realpath(__DIR__ . '/../../../../'));
     define('DIR_SERVER', realpath(__DIR__ . '/../../'));
@@ -207,8 +177,6 @@ class Instance
 
     try {
       self::_loadConfiguration();
-      self::_loadAuth();
-      self::_loadStorage();
       self::_loadAPI();
       self::_loadVFS();
     } catch ( Exception $e ) {

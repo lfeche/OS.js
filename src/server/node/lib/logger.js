@@ -215,7 +215,7 @@ module.exports.create = function createLogger(lvl) {
     level = lvl;
   }
 
-  ns.lognt(ns.INFO, 'Loading', ns.colored('Logger', 'bold'), 'with level', level);
+  ns.lognt(ns.INFO, 'Loading:', ns.colored('Logger', 'bold'), 'with level', level);
 
   return ns;
 };

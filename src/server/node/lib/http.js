@@ -53,6 +53,7 @@
  * @property  {Object}                data        POST data (JSON)
  * @property  {Object}                files       POST files (uploads)
  * @property  {Boolean}               isfs        If this is a filesystem operation
+ * @property  {Boolean}               isapi       If this is a api operation
  * @property  {ServerSession}         session     HTTP Session
  * @property  {ServerResponder}       respond     Responder object
  * @typedef ServerRequest
@@ -274,6 +275,7 @@ function createHttpObject(request, response, path, data, responder, session_id, 
     data: data || {},
     files: files || {},
     isfs: path.match(/^\/FS/) !== null,
+    isapi: path.match(/^\/API/) !== null,
     endpoint: path.replace(/^\/(FS|API)\/?/, ''),
     respond: responder,
     session: {

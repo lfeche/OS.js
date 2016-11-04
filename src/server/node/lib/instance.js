@@ -137,7 +137,7 @@ function loadConfiguration(opts) {
       instance.LOGGER = _osjs.logger.create(instance.LOGLEVEL);
 
       Object.keys(config.proxies).forEach(function(k) {
-        instance.LOGGER.lognt('INFO', 'Using', instance.LOGGER.colored('Proxy', 'bold'), k);
+        instance.LOGGER.lognt('INFO', 'Using:', instance.LOGGER.colored('Proxy', 'bold'), k);
       });
 
       resolve();
@@ -162,7 +162,7 @@ function loadAPI() {
       _osjs.utils.iterate(list, function(filename, index, next) {
         if ( filename.substr(0, 1) !== '.' ) {
           const path = _path.join(dirname, filename);
-          logger().lognt('INFO', 'Loading', logger().colored('API', 'bold'), path.replace(instance.DIRS.root, ''));
+          logger().lognt('INFO', 'Loading:', logger().colored('API', 'bold'), path.replace(instance.DIRS.root, ''));
 
           const methods = require(path);
           Object.keys(methods).forEach(function(k) {
@@ -185,7 +185,7 @@ function loadAuth() {
 
   function _load(resolve, reject) {
     const path = _path.join(instance.DIRS.modules, 'auth/' + name + '.js');
-    logger().lognt('INFO', 'Loading', logger().colored('Authenticator', 'bold'), path.replace(instance.DIRS.root, ''));
+    logger().lognt('INFO', 'Loading:', logger().colored('Authenticator', 'bold'), path.replace(instance.DIRS.root, ''));
 
     const a = require(path);
     const c = instance.CONFIG.modules.auth[name] || {};
@@ -205,7 +205,7 @@ function loadStorage() {
 
   function _load(resolve, reject) {
     const path = _path.join(instance.DIRS.modules, 'storage/' + name + '.js');
-    logger().lognt('INFO', 'Loading', logger().colored('Storage', 'bold'), path.replace(instance.DIRS.root, ''));
+    logger().lognt('INFO', 'Loading:', logger().colored('Storage', 'bold'), path.replace(instance.DIRS.root, ''));
 
     const a = require(path);
     const c = instance.CONFIG.modules.storage[name] || {};
@@ -232,7 +232,7 @@ function loadVFS() {
       _osjs.utils.iterate(list, function(filename, index, next) {
         if ( ['.', '_'].indexOf(filename.substr(0, 1)) === -1 ) {
           const path = _path.join(dirname, filename);
-          logger().lognt('INFO', 'Loading', logger().colored('VFS Transport', 'bold'), path.replace(instance.DIRS.root, ''));
+          logger().lognt('INFO', 'Loading:', logger().colored('VFS Transport', 'bold'), path.replace(instance.DIRS.root, ''));
           instance.VFS.push(require(path));
         }
         next();
@@ -248,7 +248,7 @@ function loadVFS() {
  */
 function registerPackages(servers) {
   const path = _path.join(instance.DIRS.server, 'packages.json');
-  logger().lognt('INFO', 'Loading', logger().colored('Configuration', 'bold'), path.replace(instance.DIRS.root, ''));
+  logger().lognt('INFO', 'Loading:', logger().colored('Configuration', 'bold'), path.replace(instance.DIRS.root, ''));
 
   function _createOldInstance(instance) {
     return {
@@ -338,11 +338,11 @@ function registerPackages(servers) {
         if ( metadata.enabled !== false && _fs.existsSync(check) ) {
           var deprecated = false;
           if ( metadata.type === 'extension' ) {
-            logger().lognt('INFO', 'Loading', logger().colored('Application', 'bold'), check.replace(instance.DIRS.root, ''));
+            logger().lognt('INFO', 'Loading:', logger().colored('Application', 'bold'), check.replace(instance.DIRS.root, ''));
             deprecated = _registerExtension(require(check));
             _launchSpawners(path, module, metadata);
           } else {
-            logger().lognt('INFO', 'Loading', logger().colored('Extension', 'bold'), check.replace(instance.DIRS.root, ''));
+            logger().lognt('INFO', 'Loading:', logger().colored('Extension', 'bold'), check.replace(instance.DIRS.root, ''));
             deprecated = _registerApplication(require(check));
           }
 
@@ -351,7 +351,7 @@ function registerPackages(servers) {
           }
 
           if ( deprecated ) {
-            logger().lognt('WARN', '...', path, logger().colored('IS PACKAGE IS USING THE DEPRECATED APPLICATION API', 'yellow'));
+            logger().lognt('WARN', logger().colored('Warning:', 'yellow'), path, logger().colored('is using the deprecated Application API(s)', 'bold'));
           }
         }
       });
@@ -374,10 +374,14 @@ function request(http) {
   function _rejectResponse(err) {
     logger().log('ERROR', logger().colored(err, 'red'), err.stack || '<no stack trace>');
 
-    http.respond.json({
-      error: String(err),
-      result: false
-    }, 500);
+    if ( !http.isfs && !http.isapi ) {
+      http.respond.error(err);
+    } else {
+      http.respond.json({
+        error: String(err),
+        result: false
+      }, 500);
+    }
   }
   function _resolveResponse(result) {
     http.respond.json({

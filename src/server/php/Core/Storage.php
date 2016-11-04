@@ -52,7 +52,7 @@ class Storage
 
   public static function getInstance() {
     if ( !self::$INSTANCE ) {
-      $name = Instance::getConfig()->http->storage;
+      $name = Instance::GetConfig()->http->storage;
       $name = 'OSjs\\Modules\\Storage\\' . ucfirst($name);
       self::$INSTANCE = new $name();
     }

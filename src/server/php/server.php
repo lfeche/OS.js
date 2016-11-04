@@ -32,7 +32,9 @@
 // TODO: Mysql Authenticator
 // TODO: Mysql Storage
 // TODO: Protect Filesystem paths
-// TODO: File uploads
+// TODO: Package management
+// TODO: User management
+// TODO: Detect dist
 
 /**
  * Works using CGI or any other method

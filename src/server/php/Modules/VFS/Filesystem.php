@@ -32,6 +32,7 @@
 use OSjs\Core\Instance;
 use OSjs\Core\Request;
 use OSjs\Core\Utils;
+use OSjs\Core\VFS;
 
 use Exception;
 
@@ -71,15 +72,15 @@ abstract class Filesystem
   }
 
   final protected static function _getRealPath($path) {
-    $parts = explode(':', $path, 2);
+    $parts = explode('://', $path, 2);
     $protocol = $parts[0];
-    $mounts = (array) (INSTANCE::getConfig()->vfs->mounts ?: []);
+    $mounts = (array) (INSTANCE::GetConfig()->vfs->mounts ?: []);
 
     $replacements = [
       '%UID%' => isset($_SESSION['username']) ? $_SESSION['username'] : -1,
       '%USERNAME%' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
       '%DROOT%' => DIR_ROOT,
-      '%DIST%' => Instance::getDist(),
+      '%DIST%' => Instance::GetDist(),
       '%MOUNTPOINT%' => $protocol
     ];
 
@@ -94,8 +95,7 @@ abstract class Filesystem
       $root = $root->destination;
     }
 
-    $path = preg_replace('/^(.*):\/\//', $root, $path);
-
+    $path = $root . preg_replace('/^\/?/', '//', VFS::GetAbsoluteFilename($parts[1]));
     return str_replace(array_keys($replacements), array_values($replacements), $path);
   }
 
@@ -128,7 +128,7 @@ abstract class Filesystem
       throw new Exception('Invalid file');
     }
 
-    $config = Instance::getConfig()->vfs;
+    $config = Instance::GetConfig()->vfs;
     if ( $file['size'] <= 0 || $file['size'] > $config->maxuploadsize ) {
       throw new Exception('The upload request is either empty or too large!');
     }

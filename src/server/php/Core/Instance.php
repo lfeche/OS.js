@@ -98,28 +98,28 @@ class Instance
   /**
    * Get Loaded configuration
    */
-  final public static function getConfig() {
+  final public static function GetConfig() {
     return self::$CONFIG;
   }
 
   /**
    * Get packages manifest
    */
-  final public static function getPackages() {
+  final public static function GetPackages() {
     return self::$PACKAGES[self::$DIST];
   }
 
   /**
    * Get current dist
    */
-  final public static function getDist() {
+  final public static function GetDist() {
     return self::$DIST;
   }
 
   /**
    * Gets the VFS modules
    */
-  final public static function getVFSModules() {
+  final public static function GetVFSModules() {
     return self::$VFS;
   }
 

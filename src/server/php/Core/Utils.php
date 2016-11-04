@@ -43,7 +43,7 @@ abstract class Utils
     if ( function_exists('pathinfo') ) {
       if ( $ext = pathinfo($fname, PATHINFO_EXTENSION) ) {
         $ext = strtolower($ext);
-        $mime = (array)Instance::getConfig()->mimes;
+        $mime = (array)Instance::GetConfig()->mimes;
         if ( isset($mime[".{$ext}"]) ) {
           return $mime[".{$ext}"];
         }

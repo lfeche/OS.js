@@ -43,9 +43,9 @@ abstract class VFS
    * Get Transport VFS module from given path
    */
   final public static function GetTransportFromPath($args) {
-    $mounts = (array) (Instance::getConfig()->vfs->mounts ?: []);
+    $mounts = (array) (Instance::GetConfig()->vfs->mounts ?: []);
 
-    if ( $protocol = VFS::getProtocol($args) ) {
+    if ( $protocol = VFS::GetProtocol($args) ) {
       $transport = 'filesystem';
 
       if ( isset($mounts[$protocol]) ) {
@@ -54,7 +54,7 @@ abstract class VFS
         }
       }
 
-      foreach ( Instance::getVFSModules() as $className ) {
+      foreach ( Instance::GetVFSModules() as $className ) {
         if ( $className::TRANSPORT === $transport ) {
           return $className;
         }
@@ -64,7 +64,27 @@ abstract class VFS
     return null;
   }
 
-  public static function getProtocol($args) {
+  public static function GetAbsoluteFilename($path) {
+    $unipath = strlen($path) == 0 || $path{0} != '/';
+    $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
+    $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
+    $absolutes = [];
+
+    foreach ($parts as $part) {
+      if ('.'  == $part) continue;
+
+      if ('..' == $part) {
+        array_pop($absolutes);
+      } else {
+        $absolutes[] = $part;
+      }
+    }
+
+    $path = implode(DIRECTORY_SEPARATOR, $absolutes);
+    return !$unipath ? '/'.$path : $path;
+  }
+
+  public static function GetProtocol($args) {
     $path = is_string($args) ? $args : null;
 
     if ( is_array($args) ) {

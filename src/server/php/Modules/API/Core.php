@@ -97,7 +97,7 @@ abstract class Core
     if ( $request->data['command'] === 'list' ) {
       $request->respond()->json([
         'error' => null,
-        'result' => Instance::getPackages()
+        'result' => Instance::GetPackages()
       ]);
     }
 

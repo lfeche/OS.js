@@ -96,11 +96,11 @@ class Authenticator
     }
 
     $checks = [];
-    $config = Instance::getConfig();
+    $config = Instance::GetConfig();
 
     if ( $type === 'fs' ) {
       $checks = ['fs'];
-      $protocol = VFS::getProtocol($options['arguments']);
+      $protocol = VFS::GetProtocol($options['arguments']);
 
       if ( $fsgroups = (array)$config->vfs->groups ) {
         if ( isset($fsgroups[$protocol]) ) {
@@ -138,7 +138,7 @@ class Authenticator
 
   public static function getInstance() {
     if ( !self::$INSTANCE ) {
-      $name = Instance::getConfig()->http->authenticator;
+      $name = Instance::GetConfig()->http->authenticator;
       $name = 'OSjs\\Modules\\Auth\\' . ucfirst($name);
       self::$INSTANCE = new $name();
     }

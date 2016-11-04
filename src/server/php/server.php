@@ -32,6 +32,7 @@
 // TODO: Mysql Authenticator
 // TODO: Mysql Storage
 // TODO: Protect Filesystem paths
+// TODO: File uploads
 
 /**
  * Works using CGI or any other method
@@ -46,10 +47,9 @@ error_reporting(-1);
 
 spl_autoload_register(function($name) {
   $name = str_replace('\\', '/', $name);
-  $name = preg_replace('/^OSjs\//', '', $name);
-  $path = __DIR__ . '/' . $name . '.php';
-
-  if ( file_exists($path) ) {
+  if ( substr($name, 0, 5) == 'OSjs/' ) {
+    $name = substr($name, 5, strlen($name));
+    $path = __DIR__ . '/' . $name . '.php';
     require $path;
   }
 });

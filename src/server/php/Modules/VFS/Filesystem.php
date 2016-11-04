@@ -124,7 +124,24 @@ abstract class Filesystem
   }
 
   final public static function upload(Request $request, Array $arguments = []) {
-    throw new Exception('Not implemented');
+    if ( !isset($_FILES['upload']) || !($file = $_FILES['upload']) ) {
+      throw new Exception('Invalid file');
+    }
+
+    $config = Instance::getConfig()->vfs;
+    if ( $file['size'] <= 0 || $file['size'] > $config->maxuploadsize ) {
+      throw new Exception('The upload request is either empty or too large!');
+    }
+
+    session_write_close();
+
+    $path = self::_getRealPath("{$arguments['path']}/{$file['name']}");
+    if ( move_uploaded_file($file['tmp_name'], $path) === true ) {
+      //chmod("{$root}/{$file['name']}", 0600);
+      return true;
+    }
+
+    return false;
   }
 
   final public static function write(Request $request, Array $arguments = []) {

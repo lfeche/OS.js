@@ -379,6 +379,7 @@
 
         settings.extensions = loadExtensions;
         settings.mimes = config.mime.mapping;
+        settings.vfs.maxuploadsize = config.client.VFS.MaxUploadSize;
 
         _fs.writeFile(dest, JSON.stringify(settings, null, 4), function(err) {
           done(err, !!err);

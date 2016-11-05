@@ -61,4 +61,4 @@ mkdir /home/demo
 
 Authentication is done via the system, but OS.js runs with its own group setup.
 
-See [https://github.com/os-js/OS.js/blob/master/doc/handler-shadow.md](shadow handler documentation) for more information.
+See [https://github.com/os-js/OS.js/blob/master/doc/authentication.md](authentication documentation) and [https://github.com/os-js/OS.js/blob/master/doc/storage.md](storage documentation) for more information.

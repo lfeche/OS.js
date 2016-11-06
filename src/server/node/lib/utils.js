@@ -29,6 +29,7 @@
  */
 
 const _path = require('path');
+const _instance = require('./instance.js');
 
 /**
  * @namespace lib.osjs

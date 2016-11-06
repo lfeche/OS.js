@@ -48,7 +48,7 @@ const opts = {
 };
 
 _instance.init(opts).then(function(instance) {
-  const logger = instance.LOGGER;
+  const logger = _instance.getLogger();
   const httpConfig = instance.CONFIG.http || {};
 
   if ( instance.CONFIG.tz ) {

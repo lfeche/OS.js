@@ -26,6 +26,15 @@ function createWriteStream(http, path) {
   });
 }
 
+/**
+ * Creates a "real" path out of a virtual path
+ */
+function resolvePath(vpath, option) {
+  return new Promise(function(resolve, reject) {
+    reject('Unavailable');
+  });
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // VFS METHODS
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,6 +125,18 @@ module.exports.createReadStream = createReadStream;
  * @return  {Promise}
  */
 module.exports.createWriteStream = createWriteStream;
+
+/**
+ * Resolves the path
+ *
+ * Returns for example a real filesystem path or an URL
+ *
+ * @param   {String}           path          A virtual path
+ * @param   {Object}           options       Options to pass along
+ *
+ * @return  {Promise}
+ */
+module.exports.resolvePath = resolvePath;
 
 /**
  * The name of your module

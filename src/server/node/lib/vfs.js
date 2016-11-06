@@ -40,11 +40,10 @@ const _instance = require('./instance.js');
 // HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-function findTransport(http, method, args) {
-  var transportName = '__default__';
-
-  const instance = _instance.getInstance();
-  const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
+/**
+ * Extract path from object
+ */
+function getPathFromArgs(method, args) {
   const argumentMap = {
     _default: function(args, dest) {
       return args.path;
@@ -59,28 +58,62 @@ function findTransport(http, method, args) {
       return dest ? args.dest : args.src;
     }
   };
+  return _utils.flattenVirtualPath((argumentMap[method] || argumentMap._default)(args));
+}
 
-  const groups = instance.CONFIG.vfs.groups || {};
-  const mountpoints = instance.CONFIG.vfs.mounts || {};
-  const query = _utils.flattenVirtualPath((argumentMap[method] || argumentMap._default )(args));
+/**
+ * Parses virtual path
+ */
+function getParsedVirtualPath(query) {
   const parts = query.split(/(.*)\:\/\/(.*)/);
-  const parsed = {
-    query: query,
+  const path = String(parts[2]).replace(/^\/+?/, '/').replace(/^\/?/, '/');
+  return {
+    query: parts[1] + '://' + path,
     protocol: parts[1],
-    path: String(parts[2]).replace(/^\/+?/, '/')
+    path: path
   };
+}
 
-  const mount = mountpoints[parsed.protocol];
+/**
+ * Gets the transport by protocol
+ */
+function getTransportByProtocol(protocol) {
+  var transportName = '__default__';
+
+  const instance = _instance.getInstance();
+  const mountpoints = instance.CONFIG.vfs.mounts || {};
+  const mount = mountpoints[protocol];
+
   if ( typeof mount === 'object' ) {
     if ( typeof mount.transport === 'string' ) {
       transportName = mount.transport;
     }
+  }
 
+  return instance.VFS.find(function(module) {
+    return module.name === transportName;
+  });
+}
+
+/**
+ * Finds a transport
+ */
+function findTransport(http, method, args) {
+  const instance = _instance.getInstance();
+  const query = getPathFromArgs(method, args);
+  const parsed = getParsedVirtualPath(query);
+
+  const mountpoints = instance.CONFIG.vfs.mounts || {};
+  const mount = mountpoints[parsed.protocol];
+
+  if ( typeof mount === 'object' ) {
+    const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
     if ( mount.enabled === false || (mount.ro === true && writeableMap.indexOf(method) !== -1) ) {
       return false;
     }
   }
 
+  const groups = instance.CONFIG.vfs.groups || {};
   if ( groups[parsed.protocol] ) {
     if ( !_auth.hasGroup(instance, http, groups[parsed.protocol]) ) {
       return false;
@@ -89,9 +122,7 @@ function findTransport(http, method, args) {
 
   return Object.freeze({
     parsed: Object.freeze(parsed),
-    transport: instance.VFS.find(function(module) {
-      return module.name === transportName;
-    })
+    transport: getTransportByProtocol(parsed.protocol)
   });
 }
 
@@ -174,6 +205,20 @@ module.exports.getMime = function getMime(iter) {
   const ext = (dotindex === -1) ? null : iter.substr(dotindex);
   const instance = _instance.getInstance();
   return instance.CONFIG.mimes[ext || 'default'];
+};
+
+/**
+ * Resolves a path
+ *
+ * @param   {String}           path          A virtual path
+ * @param   {Object}           options       Options to pass along
+ *
+ * @return  {Promise}
+ */
+module.exports._resolve = function(path, options) {
+  const parsed = getParsedVirtualPath(path);
+  const transport = getTransportByProtocol(parsed.protocol);
+  return transport.resolvePath(parsed.query, options);
 };
 
 /**

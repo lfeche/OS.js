@@ -577,3 +577,23 @@ module.exports.getAuth = function() {
 module.exports.getStorage = function() {
   return instance.STORAGE;
 };
+
+/**
+ * Gets the `Config`
+ *
+ * @function getConfig
+ * @memberof lib.osjs
+ */
+module.exports.getConfig = function() {
+  return Object.freeze(instance.CONFIG);
+};
+
+/**
+ * Gets the `Logger"
+ *
+ * @function getLogger
+ * @memberof lib.osjs
+ */
+module.exports.getLogger = function() {
+  return instance.LOGGER;
+};

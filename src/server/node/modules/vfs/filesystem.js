@@ -49,7 +49,7 @@ function resolveRequestPath(http, query) {
   const parts = query.split(/(.*)\:\/\/(.*)/);
   const protocol = parts[1];
   const path = String(parts[2]).replace(/^\/+?/, '');
-  const mountpoints = _instance.getInstace().CONFIG.vfs.mounts || {};
+  const mountpoints = _instance.getConfig().vfs.mounts || {};
 
   // Figure out if this mountpoint is a filesystem path, or another transport
   var found = mountpoints[protocol] || mountpoints['*'];
@@ -64,10 +64,12 @@ function resolveRequestPath(http, query) {
     real = _path.join(found, path);
   }
 
+  query = protocol + '://' + path.replace(/^\/?/, '/');
+
   return {
     query: query,
     protocol: protocol,
-    path: protocol + '://' + path.replace(/^\/?/, '/'),
+    path: query,
     real: real
   };
 }
@@ -199,6 +201,21 @@ function readDir(query, real, filter) {
         }));
       }
     });
+  });
+}
+
+/**
+ * Resolves the path
+ */
+function resolvePath(vpath, options) {
+  return new Promise(function(resolve) {
+    resolve(resolveRequestPath({
+      session: {
+        get: function(k) {
+          return options[k];
+        }
+      }
+    }, vpath).real);
   });
 }
 
@@ -497,5 +514,6 @@ module.exports.request = function(http, req, resolve, reject) {
 
 module.exports.createReadStream = createReadStream;
 module.exports.createWriteStream = createWriteStream;
+module.exports.resolvePath = resolvePath;
 module.exports.name = '__default__';
 

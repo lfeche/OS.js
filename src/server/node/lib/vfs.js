@@ -78,15 +78,17 @@ function getParsedVirtualPath(query) {
  * Gets the transport by protocol
  */
 function getTransportByProtocol(protocol) {
-  var transportName = '__default__';
-
   const instance = _instance.getInstance();
-  const mountpoints = instance.CONFIG.vfs.mounts || {};
-  const mount = mountpoints[protocol];
 
-  if ( typeof mount === 'object' ) {
-    if ( typeof mount.transport === 'string' ) {
-      transportName = mount.transport;
+  var transportName = '__default__';
+  if ( protocol !== '$' ) {
+    const mountpoints = instance.CONFIG.vfs.mounts || {};
+    const mount = mountpoints[protocol];
+
+    if ( typeof mount === 'object' ) {
+      if ( typeof mount.transport === 'string' ) {
+        transportName = mount.transport;
+      }
     }
   }
 
@@ -103,26 +105,54 @@ function findTransport(http, method, args) {
   const query = getPathFromArgs(method, args);
   const parsed = getParsedVirtualPath(query);
 
-  const mountpoints = instance.CONFIG.vfs.mounts || {};
-  const mount = mountpoints[parsed.protocol];
-
-  if ( typeof mount === 'object' ) {
-    const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
-    if ( mount.enabled === false || (mount.ro === true && writeableMap.indexOf(method) !== -1) ) {
+  if ( !http._virtual ) {
+    if ( parsed.protocol === '$' ) {
       return false;
     }
-  }
 
-  const groups = instance.CONFIG.vfs.groups || {};
-  if ( groups[parsed.protocol] ) {
-    if ( !_auth.hasGroup(instance, http, groups[parsed.protocol]) ) {
-      return false;
+    const mountpoints = instance.CONFIG.vfs.mounts || {};
+    const mount = mountpoints[parsed.protocol];
+
+    if ( typeof mount === 'object' ) {
+      const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
+      if ( mount.enabled === false || (mount.ro === true && writeableMap.indexOf(method) !== -1) ) {
+        return false;
+      }
+    }
+
+    const groups = instance.CONFIG.vfs.groups || {};
+    if ( groups[parsed.protocol] ) {
+      if ( !_auth.hasGroup(instance, http, groups[parsed.protocol]) ) {
+        return false;
+      }
     }
   }
 
   return Object.freeze({
     parsed: Object.freeze(parsed),
     transport: getTransportByProtocol(parsed.protocol)
+  });
+}
+
+function createRequest(http, method, args) {
+  return new Promise(function(resolve, reject) {
+    function _nullResponder(arg) {
+      resolve(arg);
+    }
+
+    var newHttp = Object.assign({}, http);
+    newHttp.endpoint = method;
+    newHttp.data = args;
+    newHttp.request.method = 'POST';
+    newHttp.respond = {
+      raw: _nullResponder,
+      error: _nullResponder,
+      file: _nullResponder,
+      stream: _nullResponder,
+      json: _nullResponder
+    };
+
+    module.exports.request(newHttp, resolve, reject);
   });
 }
 
@@ -208,20 +238,6 @@ module.exports.getMime = function getMime(iter) {
 };
 
 /**
- * Resolves a path
- *
- * @param   {String}           path          A virtual path
- * @param   {Object}           options       Options to pass along
- *
- * @return  {Promise}
- */
-module.exports._resolve = function(path, options) {
-  const parsed = getParsedVirtualPath(path);
-  const transport = getTransportByProtocol(parsed.protocol);
-  return transport.resolvePath(parsed.query, options);
-};
-
-/**
  * Performs a VFS request (for internal usage). This does not make any actual HTTP responses.
  *
  * @param   {ServerRequest}    http          OS.js Server Request
@@ -234,23 +250,31 @@ module.exports._resolve = function(path, options) {
  * @memberof lib.vfs
  */
 module.exports._request = function(http, method, args) {
-  return new Promise(function(resolve, reject) {
-    function _nullResponder(arg) {
-      resolve(arg);
+  return createRequest(http, method, args);
+};
+
+/**
+ * Performs a VFS request, but for non-HTTP usage.
+ *
+ * This method supports usage of a special `$:///` mountpoint that points to the server root.
+ *
+ * @param   {String}           method        API Call Name
+ * @param   {Object}           args          API Call Arguments
+ * @param   {Object}           options       A map of options used to resolve paths internally
+ *
+ * @return  {Promise}
+ *
+ * @function _vrequest
+ * @memberof lib.vfs
+ */
+module.exports._vrequest = function(method, args, options) {
+  return createRequest({
+    _virtual: true,
+    request: {},
+    session: {
+      get: function(k) {
+        return options[k];
+      }
     }
-
-    var newHttp = Object.assign({}, http);
-    newHttp.endpoint = method;
-    newHttp.data = args;
-    newHttp.request.method = 'POST';
-    newHttp.respond = {
-      raw: _nullResponder,
-      error: _nullResponder,
-      file: _nullResponder,
-      stream: _nullResponder,
-      json: _nullResponder
-    };
-
-    module.exports.request(newHttp, resolve, reject);
-  });
+  }, method, args, true);
 };

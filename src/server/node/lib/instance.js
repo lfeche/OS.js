@@ -553,6 +553,7 @@ module.exports.run = function run(port) {
  *
  * @function getInstance
  * @memberof lib.osjs
+ * @return {ServerInstance}
  */
 module.exports.getInstance = function() {
   return Object.freeze(instance);

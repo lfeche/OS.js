@@ -53,8 +53,11 @@ function resolveRequestPath(http, query) {
 
   // Figure out if this mountpoint is a filesystem path, or another transport
   var found = mountpoints[protocol] || mountpoints['*'];
-  var real = null;
+  if ( http._virtual && protocol === '$' ) {
+    found = '/';
+  }
 
+  var real = null;
   if ( typeof found === 'object' ) {
     found = found.destination;
   }
@@ -201,21 +204,6 @@ function readDir(query, real, filter) {
         }));
       }
     });
-  });
-}
-
-/**
- * Resolves the path
- */
-function resolvePath(vpath, options) {
-  return new Promise(function(resolve) {
-    resolve(resolveRequestPath({
-      session: {
-        get: function(k) {
-          return options[k];
-        }
-      }
-    }, vpath).real);
   });
 }
 
@@ -514,6 +502,5 @@ module.exports.request = function(http, req, resolve, reject) {
 
 module.exports.createReadStream = createReadStream;
 module.exports.createWriteStream = createWriteStream;
-module.exports.resolvePath = resolvePath;
 module.exports.name = '__default__';
 

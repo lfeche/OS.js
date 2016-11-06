@@ -32,10 +32,11 @@
  * @namespace modules.api
  */
 
+const _instance = require('./../../lib/instance.js');
+
 /**
  * Attempt to store settings
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -43,6 +44,6 @@
  * @function settings
  * @memberof modules.api
  */
-module.exports.settings = function(instance, http, resolve, reject) {
-  return instance.STORAGE.setSettings.apply(null, arguments);
+module.exports.settings = function(http, resolve, reject) {
+  return _instance.getStorage().setSettings.apply(null, arguments);
 };

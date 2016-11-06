@@ -32,25 +32,25 @@
  * @namespace lib.auth
  */
 
+const _instance = require('./instance.js');
+
 /**
  * Initializes a session
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  *
  * @function initSession
  * @memberof lib.auth
  */
-module.exports.initSession = function(instance, http) {
+module.exports.initSession = function(http) {
   return new Promise(function(resolve, reject) {
-    instance.AUTH.initSession(instance, http, resolve, reject);
+    _instance.getAuth().initSession(http, resolve, reject);
   });
 };
 
 /**
  * Checks a permission
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           type          Permission type
  * @param   {Object}           [options]     Permission options/arguments
@@ -58,7 +58,8 @@ module.exports.initSession = function(instance, http) {
  * @function checkPermission
  * @memberof lib.auth
  */
-module.exports.checkPermission = function(instance, http, type, options) {
+module.exports.checkPermission = function(http, type, options) {
+  const instance = _instance.getInstance();
   const groups = instance.CONFIG.api.groups;
 
   function _check(checkGroups, resolve, reject) {
@@ -76,7 +77,7 @@ module.exports.checkPermission = function(instance, http, type, options) {
         }
       }
 
-      if ( module.exports.hasGroup(instance, http, checks) ) {
+      if ( module.exports.hasGroup(http, checks) ) {
         resolve();
       } else {
         reject('Access denied!');
@@ -87,7 +88,7 @@ module.exports.checkPermission = function(instance, http, type, options) {
   }
 
   return new Promise(function(resolve, reject) {
-    instance.AUTH.checkPermission(instance, http, function(checkGroups) {
+    _instance.getAuth().checkPermission(http, function(checkGroups) {
       _check(checkGroups, resolve, reject);
     }, reject, type, options);
   });
@@ -96,22 +97,20 @@ module.exports.checkPermission = function(instance, http, type, options) {
 /**
  * Checks a session
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  *
  * @function checkSession
  * @memberof lib.auth
  */
-module.exports.checkSession = function(instance, http) {
+module.exports.checkSession = function(http) {
   return new Promise(function(resolve, reject) {
-    instance.AUTH.checkSession(instance, http, resolve, reject);
+    _instance.getAuth().checkSession(http, resolve, reject);
   });
 };
 
 /**
  * Checks if user has given group(s)
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String|Array}     groupList     Group(s)
  * @param   {Boolean}          [all=true]    Check if all and not some
@@ -119,7 +118,7 @@ module.exports.checkSession = function(instance, http) {
  * @function hasGroup
  * @memberof lib.auth
  */
-module.exports.hasGroup = function(instance, http, groupList, all) {
+module.exports.hasGroup = function(http, groupList, all) {
   if ( !(groupList instanceof Array) || !groupList.length ) {
     return true;
   }

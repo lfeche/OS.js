@@ -45,8 +45,8 @@ function _readFile(username, path, resolve) {
   });
 }
 
-module.exports.setSettings = function(instance, http, resolve, reject) {
-  const path = _utils.resolveDirectory(instance, http, instance.CONFIG.modules.storage.system.settings);
+module.exports.setSettings = function(http, resolve, reject) {
+  const path = _utils.resolveDirectory(http, instance.CONFIG.modules.storage.system.settings);
   _fs.writeFile(path, JSON.stringify(http.data.settings), function(err, res) {
     if ( err ) {
       reject(err);
@@ -56,28 +56,28 @@ module.exports.setSettings = function(instance, http, resolve, reject) {
   });
 };
 
-module.exports.getSettings = function(instance, http, resolve, reject) {
-  const path = _utils.resolveDirectory(instance, http, instance.CONFIG.modules.storage.system.settings);
+module.exports.getSettings = function(http, resolve, reject) {
+  const path = _utils.resolveDirectory(http, instance.CONFIG.modules.storage.system.settings);
   _readFile(null, path, resolve);
 };
 
-module.exports.getGroups = function(instance, http, resolve, reject) {
+module.exports.getGroups = function(http, resolve, reject) {
   const username = http.session.get('username');
   const path = instance.CONFIG.modules.storage.system.groups;
   _readFile(username, path, resolve);
 };
 
-module.exports.getBlacklist = function(instance, http, resolve, reject) {
+module.exports.getBlacklist = function(http, resolve, reject) {
   const username = http.session.get('username');
   const path = instance.CONFIG.modules.storage.system.blacklist;
   _readFile(username, path, resolve);
 };
 
-module.exports.setBlacklist = function(instance, http, resolve, reject) {
+module.exports.setBlacklist = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.register = function(instance, config) {
+module.exports.register = function(config) {
 };
 
 module.exports.destroy = function() {

@@ -11,7 +11,7 @@ const _fstream = require('fstream');
 /**
  * Create a read stream
  */
-function createReadStream(instance, http, path) {
+function createReadStream(http, path) {
   return new Promise(function(resolve, reject) {
     resolve(_fstream.Reader(null));
   });
@@ -20,7 +20,7 @@ function createReadStream(instance, http, path) {
 /**
  * Create a write stream
  */
-function createWriteStream(instance, http, path) {
+function createWriteStream(http, path) {
   return new Promise(function(resolve, reject) {
     resolve(_fstream.Writer(null));
   });
@@ -32,47 +32,47 @@ function createWriteStream(instance, http, path) {
 
 const VFS = {
 
-  read: function(instance, http, args, resolve, reject) {
+  read: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  upload: function(instance, http, args, resolve, reject) {
+  upload: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  write: function(instance, http, args, resolve, reject) {
+  write: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  delete: function(instance, http, args, resolve, reject) {
+  delete: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  copy: function(instance, http, args, resolve, reject) {
+  copy: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  move: function(instance, http, args, resolve, reject) {
+  move: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  mkdir: function(instance, http, args, resolve, reject) {
+  mkdir: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  find: function(instance, http, args, resolve, reject) {
+  find: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  fileinfo: function(instance, http, args, resolve, reject) {
+  fileinfo: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  scandir: function(instance, http, args, resolve, reject) {
+  scandir: function(http, args, resolve, reject) {
     reject('Not implemented');
   },
 
-  freeSpace: function(instance, http, args, resolve, reject) {
+  freeSpace: function(http, args, resolve, reject) {
     reject('Not implemented');
   }
 };
@@ -84,15 +84,14 @@ const VFS = {
 /**
  * Performs a VFS request
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  * @param   {Object}           args          API Call Arguments
  */
-module.exports.request = function(instance, http, req, resolve, reject) {
+module.exports.request = function(http, req, resolve, reject) {
   if ( typeof VFS[req.method] === 'function' ) {
-    VFS[req.method](instance, http, req.data, resolve, reject);
+    VFS[req.method](http, req.data, resolve, reject);
   } else {
     reject('No such VFS method');
   }
@@ -101,7 +100,6 @@ module.exports.request = function(instance, http, req, resolve, reject) {
 /**
  * Creates a new Readable stream
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           path          Virtual path
  *
@@ -112,7 +110,6 @@ module.exports.createReadStream = createReadStream;
 /**
  * Creates a new Writeable stream
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           path          Virtual path
  *

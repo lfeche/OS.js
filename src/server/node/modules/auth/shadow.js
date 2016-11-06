@@ -30,7 +30,7 @@
 const _passwd = require('passwd-linux');
 const _userid = require('userid');
 
-module.exports.login = function(instance, http, resolve, reject) {
+module.exports.login = function(http, resolve, reject) {
   _passwd.checkPass(login.username, login.password, function(err, res) {
     if ( !err && res !== 'passwordCorrect' ) {
       err = 'Invalid credentials';
@@ -48,23 +48,23 @@ module.exports.login = function(instance, http, resolve, reject) {
   });
 };
 
-module.exports.logout = function(instance, http, resolve, reject) {
+module.exports.logout = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.manage = function(instance, http, resolve, reject) {
+module.exports.manage = function(http, resolve, reject) {
   reject('Not available');
 };
 
-module.exports.initSession = function(instance, http, resolve, reject) {
+module.exports.initSession = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+module.exports.checkPermission = function(http, resolve, reject, type, options) {
   resolve(true);
 };
 
-module.exports.checkSession = function(instance, http, resolve, reject) {
+module.exports.checkSession = function(http, resolve, reject) {
   if ( http.session.get('username') ) {
     resolve();
   } else {
@@ -72,7 +72,7 @@ module.exports.checkSession = function(instance, http, resolve, reject) {
   }
 };
 
-module.exports.register = function(instance, config) {
+module.exports.register = function(config) {
   _config = config;
 };
 

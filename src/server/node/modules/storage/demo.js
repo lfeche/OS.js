@@ -28,27 +28,27 @@
  * @licence Simplified BSD License
  */
 
-module.exports.setSettings = function(instance, http, resolve, reject) {
+module.exports.setSettings = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.getSettings = function(instance, http, resolve, reject) {
+module.exports.getSettings = function(http, resolve, reject) {
   resolve({});
 };
 
-module.exports.getGroups = function(instance, http, resolve, reject) {
+module.exports.getGroups = function(http, resolve, reject) {
   resolve([]); // Unused in this case
 };
 
-module.exports.getBlacklist = function(instance, http, resolve, reject) {
+module.exports.getBlacklist = function(http, resolve, reject) {
   resolve([]);
 };
 
-module.exports.setBlacklist = function(instance, http, resolve, reject) {
+module.exports.setBlacklist = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.register = function(instance, config) {
+module.exports.register = function(config) {
 };
 
 module.exports.destroy = function() {

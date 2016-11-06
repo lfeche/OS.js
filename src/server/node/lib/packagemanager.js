@@ -33,6 +33,7 @@ const _fs = require('node-fs-extra');
 const _unzip = require('unzip');
 const _vfs = require('./vfs.js');
 const _utils = require('./utils.js');
+const _instance = require('./instance.js');
 
 /**
  * @namespace lib.packagemanager
@@ -42,7 +43,8 @@ const _utils = require('./utils.js');
 // HELPERS
 /////////////////////////////////////////////////////////////////////////////
 
-function getSystemMetadata(instance, http, resolve, reject, args) {
+function getSystemMetadata(http, resolve, reject, args) {
+  const instance = _instance.getInstance();
   const path = _path.join(instance.DIRS.server, 'packages.json');
   _fs.readFile(path, function(e, data) {
     if ( e ) {
@@ -57,7 +59,7 @@ function getSystemMetadata(instance, http, resolve, reject, args) {
   });
 }
 
-function getUserMetadata(instance, http, resolve, reject, args) {
+function getUserMetadata(http, resolve, reject, args) {
   const paths = args.paths || [];
   var summed = {};
 
@@ -72,7 +74,7 @@ function getUserMetadata(instance, http, resolve, reject, args) {
         }
       };
 
-      _vfs._request(instance, http, 'read', args).then(function(res) {
+      _vfs._request(http, 'read', args).then(function(res) {
         var meta = JSON.parse(res);
         Object.keys(meta).forEach(function(k) {
           summed[k] = meta[k];
@@ -88,12 +90,12 @@ function getUserMetadata(instance, http, resolve, reject, args) {
   });
 }
 
-function generateUserMetadata(instance, http, resolve, reject, args) {
+function generateUserMetadata(http, resolve, reject, args) {
   const paths = args.paths || [];
   var summed = {};
 
   _utils.iterate(paths, function(root, rindex, next) {
-    _vfs._request(instance, http, 'scandir', {path: root}).then(function(list) {
+    _vfs._request(http, 'scandir', {path: root}).then(function(list) {
       _utils.iterate(list || [], function(liter, lindex, nnext) {
         const dirname = liter.filename;
         if ( liter.type === 'dir' && dirname.substr(0, 1) !== '.' ) {
@@ -106,7 +108,7 @@ function generateUserMetadata(instance, http, resolve, reject, args) {
             }
           };
 
-          _vfs._request(instance, http, 'read', args).then(function(res) {
+          _vfs._request(http, 'read', args).then(function(res) {
             if ( res ) {
               var meta = JSON.parse(res);
               meta.path = root + '/' + dirname;
@@ -128,7 +130,7 @@ function generateUserMetadata(instance, http, resolve, reject, args) {
           }
         };
 
-        _vfs._request(instance, http, 'write', args).then(next).catch(next);
+        _vfs._request(http, 'write', args).then(next).catch(next);
       });
     }).catch(next);
   }, function() {
@@ -143,7 +145,6 @@ function generateUserMetadata(instance, http, resolve, reject, args) {
 /**
  * Installs given package
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -156,12 +157,12 @@ function generateUserMetadata(instance, http, resolve, reject, args) {
  * @function install
  * @memberof lib.packagemanager
  */
-module.exports.install = function(instance, http, resolve, reject, args) {
+module.exports.install = function(http, resolve, reject, args) {
   /*eslint new-cap: "warn"*/
   /*eslint new-cap: "off"*/
 
   function _onerror(e) {
-    _vfs._request(instance, http, 'delete', {path: args.dest}).then(function() {
+    _vfs._request(http, 'delete', {path: args.dest}).then(function() {
       reject(e);
     }).catch(function() {
       reject(e);
@@ -169,15 +170,15 @@ module.exports.install = function(instance, http, resolve, reject, args) {
   }
 
   if ( args.zip && args.dest && args.paths ) {
-    _vfs._request(instance, http, 'exists', {
+    _vfs._request(http, 'exists', {
       path: args.dest
     }).then(function() {
-      _vfs._request(instance, http, 'mkdir', {
+      _vfs._request(http, 'mkdir', {
         path: args.dest
       }).then(function() {
-        _vfs.createReadStream(instance, http, args.zip).then(function(zipStream) {
+        _vfs.createReadStream(http, args.zip).then(function(zipStream) {
           zipStream.pipe(_unzip.Parse()).on('entry', function(entry) {
-            _vfs.createWriteStream(instance, http, [args.dest, entry.path].join('/')).then(function(s) {
+            _vfs.createWriteStream(http, [args.dest, entry.path].join('/')).then(function(s) {
               entry.pipe(s);
             });
           }).on('finish', function() {
@@ -195,7 +196,6 @@ module.exports.install = function(instance, http, resolve, reject, args) {
 /**
  * Uninstalls given package
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -206,9 +206,9 @@ module.exports.install = function(instance, http, resolve, reject, args) {
  * @function uninstall
  * @memberof lib.packagemanager
  */
-module.exports.uninstall = function(instance, http, resolve, reject, args) {
+module.exports.uninstall = function(http, resolve, reject, args) {
   if ( args.path ) {
-    _vfs._request(instance, http, 'delete', {
+    _vfs._request(http, 'delete', {
       path: args.path
     }).then(resolve).catch(reject);
   } else {
@@ -219,7 +219,6 @@ module.exports.uninstall = function(instance, http, resolve, reject, args) {
 /**
  * Updates given package
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -229,14 +228,13 @@ module.exports.uninstall = function(instance, http, resolve, reject, args) {
  * @function update
  * @memberof lib.packagemanager
  */
-module.exports.update = function(instance, http, resolve, reject, args) {
+module.exports.update = function(http, resolve, reject, args) {
   reject('Unavailable');
 };
 
 /**
  * Perform cache action
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -248,10 +246,10 @@ module.exports.update = function(instance, http, resolve, reject, args) {
  * @function cache
  * @memberof lib.packagemanager
  */
-module.exports.cache = function(instance, http, resolve, reject, args) {
+module.exports.cache = function(http, resolve, reject, args) {
   var action = args.action;
   if ( action === 'generate' && args.scope === 'user' ) {
-    generateUserMetadata(instance, http, resolve, reject, args);
+    generateUserMetadata(http, resolve, reject, args);
   } else {
     reject('Unavailable');
   }
@@ -260,7 +258,6 @@ module.exports.cache = function(instance, http, resolve, reject, args) {
 /**
  * List packages
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -272,12 +269,12 @@ module.exports.cache = function(instance, http, resolve, reject, args) {
  * @function list
  * @memberof lib.packagemanager
  */
-module.exports.list = function(instance, http, resolve, reject, args) {
+module.exports.list = function(http, resolve, reject, args) {
   if ( !args.scope ) {
-    getSystemMetadata(instance, http, function(summed) {
+    getSystemMetadata(http, function(summed) {
       summed = summed || {};
 
-      getUserMetadata(instance, http, function(r) {
+      getUserMetadata(http, function(r) {
         Object.keys(r || {}).forEach(function(k) {
           if ( !summed[k] ) {
             summed[k] = r[k];
@@ -287,9 +284,9 @@ module.exports.list = function(instance, http, resolve, reject, args) {
       }, reject, args);
     }, reject, args);
   } else if ( args.scope === 'system' ) {
-    getSystemMetadata(instance, http, resolve, reject, args);
+    getSystemMetadata(http, resolve, reject, args);
   } else if ( args.scope === 'user' ) {
-    getUserMetadata(instance, http, resolve, reject, args);
+    getUserMetadata(http, resolve, reject, args);
   } else {
     reject('Invalid scope');
   }

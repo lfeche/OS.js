@@ -28,7 +28,7 @@
  * @licence Simplified BSD License
  */
 
-module.exports.login = function(instance, http, resolve, reject) {
+module.exports.login = function(http, resolve, reject) {
   resolve({
     id: 0,
     username: 'demo',
@@ -37,23 +37,23 @@ module.exports.login = function(instance, http, resolve, reject) {
   });
 };
 
-module.exports.logout = function(instance, http, resolve, reject) {
+module.exports.logout = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.manage = function(instance, http, resolve, reject) {
+module.exports.manage = function(http, resolve, reject) {
   reject('Not available');
 };
 
-module.exports.initSession = function(instance, http, resolve, reject) {
+module.exports.initSession = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+module.exports.checkPermission = function(http, resolve, reject, type, options) {
   resolve(true);
 };
 
-module.exports.checkSession = function(instance, http, resolve, reject) {
+module.exports.checkSession = function(http, resolve, reject) {
   if ( http.session.get('username') ) {
     resolve();
   } else {
@@ -61,7 +61,7 @@ module.exports.checkSession = function(instance, http, resolve, reject) {
   }
 };
 
-module.exports.register = function(instance, config) {
+module.exports.register = function(config) {
 };
 
 module.exports.destroy = function() {

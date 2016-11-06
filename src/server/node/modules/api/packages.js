@@ -37,7 +37,6 @@ const _pm = require('./../../lib/packagemanager.js');
 /**
  * Manage Packages
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -48,12 +47,12 @@ const _pm = require('./../../lib/packagemanager.js');
  * @function packages
  * @memberof modules.api
  */
-module.exports.packages = function(instance, http, resolve, reject) {
+module.exports.packages = function(http, resolve, reject) {
   const command = http.data.command;
   const args = http.data.args || {};
 
   if ( _pm[command] ) {
-    _pm[command](instance, http, resolve, reject, args);
+    _pm[command](http, resolve, reject, args);
   } else {
     reject('No such command');
   }

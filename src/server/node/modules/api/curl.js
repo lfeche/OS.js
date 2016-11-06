@@ -32,10 +32,11 @@
  * @namespace modules.api
  */
 
+const _instance = require('./../../lib/instance.js');
+
 /**
  * Do a HTTP request
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -53,7 +54,8 @@
  * @function curl
  * @memberof modules.api
  */
-module.exports.curl = function(instance, http, resolve, reject) {
+module.exports.curl = function(http, resolve, reject) {
+  const instance = _instance.getInstance();
   const args = http.data;
   const url = args.url;
 

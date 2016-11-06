@@ -31,12 +31,11 @@
 /**
  * Handles user login attempts
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolve the promise
  * @param   {Function}         reject        Reject the promise
  */
-module.exports.login = function(instance, http, resolve, reject) {
+module.exports.login = function(http, resolve, reject) {
   resolve({
     id: 0,
     username: 'Username',
@@ -48,12 +47,11 @@ module.exports.login = function(instance, http, resolve, reject) {
 /**
  * Handles user logout attempts
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolve the promise
  * @param   {Function}         reject        Reject the promise
  */
-module.exports.logout = function(instance, http, resolve, reject) {
+module.exports.logout = function(http, resolve, reject) {
   resolve(true);
 };
 
@@ -64,50 +62,46 @@ module.exports.logout = function(instance, http, resolve, reject) {
  * http.data.args = arguments
  * http.data.args.user = username
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolve the promise
  * @param   {Function}         reject        Reject the promise
  */
-module.exports.manage = function(instance, http, resolve, reject) {
+module.exports.manage = function(http, resolve, reject) {
   reject('Not available');
 };
 
 /**
  * Runs when a HTTP request is made
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolve the promise
  * @param   {Function}         reject        Reject the promise
  */
-module.exports.initSession = function(instance, http, resolve, reject) {
+module.exports.initSession = function(http, resolve, reject) {
   resolve(true);
 };
 
 /**
  * Checks the given permission
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolve the promise
  * @param   {Function}         reject        Reject the promise
  * @param   {String}           type          Permission type (vfs, api, package)
  * @param   {Object}           options       Permission options/arguments
  */
-module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+module.exports.checkPermission = function(http, resolve, reject, type, options) {
   resolve(true); // Return false to ignore internal group checking
 };
 
 /**
  * Checks if a session is available
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolve the promise
  * @param   {Function}         reject        Reject the promise
  */
-module.exports.checkSession = function(instance, http, resolve, reject) {
+module.exports.checkSession = function(http, resolve, reject) {
   if ( http.session.get('username') ) {
     resolve();
   } else {
@@ -118,10 +112,9 @@ module.exports.checkSession = function(instance, http, resolve, reject) {
 /**
  * When module is registered upon initialization
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {Object}           config        Configuration for given auth module
  */
-module.exports.register = function(instance, config) {
+module.exports.register = function(config) {
 };
 
 /**

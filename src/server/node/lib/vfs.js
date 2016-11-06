@@ -34,14 +34,16 @@
 
 const _auth = require('./auth.js');
 const _utils = require('./utils.js');
+const _instance = require('./instance.js');
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-function findTransport(instance, http, method, args) {
+function findTransport(http, method, args) {
   var transportName = '__default__';
 
+  const instance = _instance.getInstance();
   const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
   const argumentMap = {
     _default: function(args, dest) {
@@ -100,7 +102,6 @@ function findTransport(instance, http, method, args) {
 /**
  * Performs a VFS request
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -109,10 +110,10 @@ function findTransport(instance, http, method, args) {
  * @function request
  * @memberof lib.vfs
  */
-module.exports.request = function(instance, http, resolve, reject) {
+module.exports.request = function(http, resolve, reject) {
   const data = (http.request && http.request.method) === 'GET' ? {path: http.endpoint.replace(/(^get\/)?/, '')} : http.data;
   const fn = http.request.method === 'GET' ? 'read' : http.endpoint;
-  const found = findTransport(instance, http, fn, data);
+  const found = findTransport(http, fn, data);
 
   if ( found === false ) {
     return reject('Operation denied!');
@@ -120,7 +121,7 @@ module.exports.request = function(instance, http, resolve, reject) {
     return reject('Cannot find VFS module for: ' + found.parsed.query);
   }
 
-  found.transport.request(instance, http, {
+  found.transport.request(http, {
     query: found.parsed.query,
     method: fn,
     data: data
@@ -130,7 +131,6 @@ module.exports.request = function(instance, http, resolve, reject) {
 /**
  * Creates a new Readable stream
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           path          Virtual path
  *
@@ -139,15 +139,14 @@ module.exports.request = function(instance, http, resolve, reject) {
  * @function createReadStream
  * @memberof lib.vfs
  */
-module.exports.createReadStream = function(instance, http, path) {
-  const found = findTransport(instance, http, 'read', {path: path});
-  return found.transport.createReadStream(instance, http, path);
+module.exports.createReadStream = function(http, path) {
+  const found = findTransport(http, 'read', {path: path});
+  return found.transport.createReadStream(http, path);
 };
 
 /**
  * Creates a new Writeable stream
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           path          Virtual path
  *
@@ -156,31 +155,30 @@ module.exports.createReadStream = function(instance, http, path) {
  * @function createWriteStream
  * @memberof lib.vfs
  */
-module.exports.createWriteStream = function(instance, http, path) {
-  const found = findTransport(instance, http, 'read', {path: path});
-  return found.transport.createWriteStream(instance, http, path);
+module.exports.createWriteStream = function(http, path) {
+  const found = findTransport(http, 'read', {path: path});
+  return found.transport.createWriteStream(http, path);
 };
 
 /**
  * Gets file MIME type
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {String}           iter          The filename or path
  *
  * @return {String}
  * @function getMime
  * @memberof lib.vfs
  */
-module.exports.getMime = function getMime(instance, iter) {
+module.exports.getMime = function getMime(iter) {
   const dotindex = iter.lastIndexOf('.');
   const ext = (dotindex === -1) ? null : iter.substr(dotindex);
+  const instance = _instance.getInstance();
   return instance.CONFIG.mimes[ext || 'default'];
 };
 
 /**
  * Performs a VFS request (for internal usage). This does not make any actual HTTP responses.
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           method        API Call Name
  * @param   {Object}           args          API Call Arguments
@@ -190,7 +188,7 @@ module.exports.getMime = function getMime(instance, iter) {
  * @function _request
  * @memberof lib.vfs
  */
-module.exports._request = function(instance, http, method, args) {
+module.exports._request = function(http, method, args) {
   return new Promise(function(resolve, reject) {
     function _nullResponder(arg) {
       resolve(arg);
@@ -208,6 +206,6 @@ module.exports._request = function(instance, http, method, args) {
       json: _nullResponder
     };
 
-    module.exports.request(instance, newHttp, resolve, reject);
+    module.exports.request(newHttp, resolve, reject);
   });
 };

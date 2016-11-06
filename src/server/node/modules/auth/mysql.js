@@ -33,7 +33,7 @@ const _utils = require('./../../lib/utils.js');
 
 var pool;
 
-module.exports.login = function(instance, http, resolve, reject) {
+module.exports.login = function(http, resolve, reject) {
   const q = 'SELECT `id`, `username`, `name`, `groups`, `password` FROM `users` WHERE `username` = ? LIMIT 1;';
   const a = [http.data.username];
 
@@ -79,23 +79,23 @@ module.exports.login = function(instance, http, resolve, reject) {
   }, true);
 };
 
-module.exports.logout = function(instance, http, resolve, reject) {
+module.exports.logout = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.manage = function(instance, http, resolve, reject) {
+module.exports.manage = function(http, resolve, reject) {
   reject('Not available');
 };
 
-module.exports.initSession = function(instance, http, resolve, reject) {
+module.exports.initSession = function(http, resolve, reject) {
   resolve(true);
 };
 
-module.exports.checkPermission = function(instance, http, resolve, reject, type, options) {
+module.exports.checkPermission = function(http, resolve, reject, type, options) {
   resolve(true);
 };
 
-module.exports.checkSession = function(instance, http, resolve, reject) {
+module.exports.checkSession = function(http, resolve, reject) {
   if ( http.session.get('username') ) {
     resolve();
   } else {
@@ -103,7 +103,7 @@ module.exports.checkSession = function(instance, http, resolve, reject) {
   }
 };
 
-module.exports.register = function(instance, config) {
+module.exports.register = function(config) {
   var ccfg = _utils.mysqlConfiguration(config);
   pool = _mysql.createPool(ccfg);
 };

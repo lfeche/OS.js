@@ -32,10 +32,11 @@
  * @namespace modules.api
  */
 
+const _instance = require('./../../lib/instance.js');
+
 /**
  * Send a login attempt
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -43,7 +44,7 @@
  * @function login
  * @memberof modules.api
  */
-module.exports.login = function(instance, http, resolve, reject) {
+module.exports.login = function(http, resolve, reject) {
   function _fail(e) {
     http.session.set('username', null);
     http.session.set('groups', null);
@@ -55,11 +56,11 @@ module.exports.login = function(instance, http, resolve, reject) {
     http.session.set('groups', JSON.stringify(userData.groups));
 
     new Promise(function(res, rej) {
-      instance.STORAGE.getSettings(instance, http, res, rej);
+      _instance.getStorage().getSettings(http, res, rej);
     }).then(function(userSettings) {
 
       new Promise(function(res, rej) {
-        instance.STORAGE.getBlacklist(instance, http, res, rej);
+        _instance.getStorage().getBlacklist(http, res, rej);
       }).then(function(blacklist) {
         http.session.set('username', userData.username);
         http.session.set('groups', JSON.stringify(userData.groups));
@@ -75,10 +76,10 @@ module.exports.login = function(instance, http, resolve, reject) {
   }
 
   new Promise(function(res, rej) {
-    instance.AUTH.login(instance, http, res, rej);
+    _instance.getAuth().login(http, res, rej);
   }).then(function(userData) {
     if ( typeof userData.groups === 'undefined' ) {
-      instance.STORAGE.getGroups(instance, http, function(groups) {
+      _instance.getStorage().getGroups(http, function(groups) {
         userData.groups = groups;
         _proceed(userData);
       });
@@ -91,7 +92,6 @@ module.exports.login = function(instance, http, resolve, reject) {
 /**
  * Send a logout attempt
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -99,7 +99,7 @@ module.exports.login = function(instance, http, resolve, reject) {
  * @function logout
  * @memberof modules.api
  */
-module.exports.logout = function(instance, http, resolve, reject) {
-  return instance.AUTH.logout.apply(null, arguments);
+module.exports.logout = function(http, resolve, reject) {
+  return _instance.getAuth().logout.apply(null, arguments);
 };
 

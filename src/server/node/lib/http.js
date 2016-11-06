@@ -174,7 +174,7 @@ function createHttpResponder(instance, response) {
 
   function _stream(path, stream, code, mime) {
     if ( !mime ) {
-      mime = _vfs.getMime(instance, path);
+      mime = _vfs.getMime(path);
     }
 
     stream.on('end', function() {

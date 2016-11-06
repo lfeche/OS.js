@@ -189,7 +189,7 @@ function loadAuth() {
 
     const a = require(path);
     const c = instance.CONFIG.modules.auth[name] || {};
-    a.register(instance, c);
+    a.register(c);
     instance.AUTH = a;
     resolve();
   }
@@ -209,7 +209,7 @@ function loadStorage() {
 
     const a = require(path);
     const c = instance.CONFIG.modules.storage[name] || {};
-    a.register(instance, c);
+    a.register(c);
     instance.STORAGE = a;
     resolve();
   }
@@ -262,7 +262,7 @@ function registerPackages(servers) {
 
   function _registerApplication() {
     if ( typeof module.register === 'function' ) {
-      module.register(instance, packages[path], {
+      module.register(packages[path], {
         http: servers.httpServer,
         ws: servers.websocketServer,
         proxy: servers.proxyServer
@@ -290,7 +290,7 @@ function registerPackages(servers) {
       module.register(backAPI, {}, _createOldInstance(instance));
 
       Object.keys(backAPI).forEach(function(k) {
-        instance.API[k] = function(instance, http, resolve, reject, args) {
+        instance.API[k] = function(http, resolve, reject, args) {
           backAPI[k](_createOldInstance(instance), args, function(err, res) {
             if ( err ) {
               reject(err);
@@ -398,7 +398,7 @@ function request(http) {
       if ( skip ) {
         resolve();
       } else {
-        _osjs.auth.checkSession(instance, http).then(function() {
+        _osjs.auth.checkSession(http).then(function() {
           resolve();
         }).catch(_rejectResponse);
       }
@@ -407,7 +407,7 @@ function request(http) {
         if ( skip ) {
           resolve();
         } else {
-          _osjs.auth.checkPermission(instance, http, type, options).then(function() {
+          _osjs.auth.checkPermission(http, type, options).then(function() {
             resolve();
           }).catch(_rejectResponse);
         }
@@ -419,7 +419,7 @@ function request(http) {
   function _vfsCall() {
     _checkPermission('fs', {method: http.endpoint.replace(/(^get\/)?/, ''), args: http.data}).then(function() {
       (new Promise(function(resolve, reject) {
-        _osjs.vfs.request(instance, http, resolve, reject);
+        _osjs.vfs.request(http, resolve, reject);
       })).then(_resolveResponse).catch(_rejectResponse);
     }).catch(_rejectResponse);
   }
@@ -427,7 +427,7 @@ function request(http) {
   function _apiCall() {
     _checkPermission('api', {method: http.endpoint}, http.data).then(function() {
       (new Promise(function(resolve, reject) {
-        instance.API[http.endpoint](instance, http, resolve, reject);
+        instance.API[http.endpoint](http, resolve, reject);
       })).then(_resolveResponse).catch(_rejectResponse);
     }).catch(_rejectResponse);
   }
@@ -445,7 +445,7 @@ function request(http) {
     const pmatch = http.path.match(/^\/?packages\/(.*\/.*)\/(.*)/);
     if ( pmatch && pmatch.length === 3 ) {
       _checkPermission('package', {path: pmatch[1]}).then(function() {
-        _osjs.auth.checkSession(instance, http)
+        _osjs.auth.checkSession(http)
           .then(_serve).catch(_deny);
       }).catch(_deny);
     } else {
@@ -454,7 +454,7 @@ function request(http) {
   }
 
   // Take on the HTTP request
-  _osjs.auth.initSession(instance, http).then(function() {
+  _osjs.auth.initSession(http).then(function() {
     if ( http.request.method === 'GET' ) {
       if ( http.isfs ) {
         _vfsCall();
@@ -546,4 +546,34 @@ module.exports.init = function init(opts) {
  */
 module.exports.run = function run(port) {
   return _osjs.http.run(instance.PORT);
+};
+
+/**
+ * Gets the `instance` object
+ *
+ * @function getInstance
+ * @memberof lib.osjs
+ */
+module.exports.getInstance = function() {
+  return Object.freeze(instance);
+};
+
+/**
+ * Gets the `Authenticator`
+ *
+ * @function getAuthenticator
+ * @memberof lib.osjs
+ */
+module.exports.getAuth = function() {
+  return instance.AUTH;
+};
+
+/**
+ * Gets the `Storage`
+ *
+ * @function getStorage
+ * @memberof lib.osjs
+ */
+module.exports.getStorage = function() {
+  return instance.STORAGE;
 };

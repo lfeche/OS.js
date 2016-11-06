@@ -33,11 +33,11 @@
  */
 
 const _path = require('path');
+const _instance = require('./../../lib/instance.js');
 
 /**
  * Sends a request to an application
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -49,7 +49,9 @@ const _path = require('path');
  * @function application
  * @memberof modules.api
  */
-module.exports.application = function(instance, http, resolve, reject) {
+module.exports.application = function(http, resolve, reject) {
+  const instance = _instance.getInstance();
+
   /*eslint dot-notation: "off"*/
   const apath = http.data.path || null;
   const ameth = http.data.method || null;

@@ -32,10 +32,11 @@
  * @namespace modules.api
  */
 
+const _instance = require('./../../lib/instance.js');
+
 /**
  * Manage Users
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
@@ -46,6 +47,6 @@
  * @function users
  * @memberof modules.api
  */
-module.exports.users = function(instance, http, resolve, reject) {
-  return instance.AUTH.manage.apply(null, arguments);
+module.exports.users = function(http, resolve, reject) {
+  return _instance.getAuth().manage.apply(null, arguments);
 };

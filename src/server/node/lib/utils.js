@@ -166,7 +166,6 @@ module.exports.mysqlConfiguration = function(config) {
 /**
  * Initializes a session
  *
- * @param   {ServerInstance}   instance      OS.js instance
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           str           String to resolve
  * @param   {String}           [protocol]    Resolved protocol name (for internal paths)
@@ -176,7 +175,8 @@ module.exports.mysqlConfiguration = function(config) {
  * @function resolveDirectory
  * @memeberof lib.osjs
  */
-module.exports.resolveDirectory = function(instance, http, str, protocol) {
+module.exports.resolveDirectory = function(http, str, protocol) {
+  const instance = _instance.getInstance();
   const rmap = {
     '%DIST%': function() {
       return instance.DIST;
@@ -205,7 +205,6 @@ module.exports.resolveDirectory = function(instance, http, str, protocol) {
 /**
  * Flattens a virtual path to avoid going down below the mount root
  *
- * @param   {ServerInstance}   instance     OS.js instance
  * @param   {ServerRequest}    http         OS.js Server Request
  * @param   {String}           path         The virtual path
  *

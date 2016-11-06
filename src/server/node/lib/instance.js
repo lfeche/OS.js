@@ -262,7 +262,7 @@ function registerPackages(servers) {
 
   function _registerApplication() {
     if ( typeof module.register === 'function' ) {
-      module.register(packages[path], {
+      module.register(instance, packages[path], {
         http: servers.httpServer,
         ws: servers.websocketServer,
         proxy: servers.proxyServer

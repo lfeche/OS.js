@@ -12,7 +12,7 @@
   var instance;
 
   function _callAPI(m, a, cb) {
-    instance.API.application(instance, {
+    instance.API.application({
       data: a
     }, function(result) {
       cb(null, result);
@@ -22,7 +22,7 @@
   }
 
   function _callVFS(m, a, cb) {
-    _vfs._request(instance, {
+    _vfs._request({
       session: {
         get: function(key) {
           if ( key === 'username' ) {

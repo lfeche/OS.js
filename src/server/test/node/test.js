@@ -14,9 +14,9 @@
   function _callAPI(m, a, cb) {
     instance.API.application({
       data: a
-    }, a, function(result) {
+    }, a).then(function(result) {
       cb(null, result);
-    }, function(error) {
+    }).catch(function(error) {
       cb(error);
     });
   }

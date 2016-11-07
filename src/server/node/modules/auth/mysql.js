@@ -34,26 +34,12 @@ const _utils = require('./../../lib/utils.js');
 var pool;
 
 module.exports.login = function(http, data) {
-  const q = 'SELECT `id`, `username`, `name`, `groups`, `password` FROM `users` WHERE `username` = ? LIMIT 1;';
+  const q = 'SELECT `id`, `username`, `name`, `password` FROM `users` WHERE `username` = ? LIMIT 1;';
   const a = [data.username];
 
   return new Promise(function(resolve, reject) {
     function _invalid() {
       reject('Invalid credentials');
-    }
-
-    function _login(row) {
-      var groups = [];
-      try {
-        groups = JSON.parse(row.groups);
-      } catch (e) {}
-
-      resolve({
-        id: parseInt(row.id),
-        username: row.username,
-        name: row.name,
-        groups: groups
-      });
     }
 
     function _auth(row) {
@@ -62,7 +48,11 @@ module.exports.login = function(http, data) {
         if ( err ) {
           reject(err);
         } else if ( res === true ) {
-          _login(row);
+          resolve({
+            id: parseInt(row.id),
+            username: row.username,
+            name: row.name
+          });
         } else {
           _invalid();
         }

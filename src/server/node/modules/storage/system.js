@@ -29,6 +29,7 @@
  */
 const _fs = require('node-fs-extra');
 const _vfs = require('./../../lib/vfs.js');
+const _instance = require('./../../lib/instance.js');
 
 function _readFile(username, path, resolve) {
   function _done(data) {
@@ -45,13 +46,14 @@ function _readFile(username, path, resolve) {
   });
 }
 
-module.exports.setSettings = function(username) {
+module.exports.setSettings = function(username, settings) {
+  const instance = _instance.getInstance();
   const path = _vfs.resolvePathArguments(instance.CONFIG.modules.storage.system.settings, {
     username: username
   });
 
   return new Promise(function(resolve, reject) {
-    _fs.writeFile(path, JSON.stringify(http.data.settings), function(err, res) {
+    _fs.writeFile(path, JSON.stringify(settings), function(err, res) {
       if ( err ) {
         reject(err);
       } else {
@@ -62,6 +64,7 @@ module.exports.setSettings = function(username) {
 };
 
 module.exports.getSettings = function(username) {
+  const instance = _instance.getInstance();
   const path = _vfs.resolvePathArguments(instance.CONFIG.modules.storage.system.settings, {
     username: username
   });
@@ -71,6 +74,7 @@ module.exports.getSettings = function(username) {
 };
 
 module.exports.getGroups = function(username) {
+  const instance = _instance.getInstance();
   const path = instance.CONFIG.modules.storage.system.groups;
   return new Promise(function(resolve) {
     _readFile(username, path, resolve);
@@ -78,6 +82,7 @@ module.exports.getGroups = function(username) {
 };
 
 module.exports.getBlacklist = function(username) {
+  const instance = _instance.getInstance();
   const path = instance.CONFIG.modules.storage.system.blacklist;
   return new Promise(function(resolve) {
     _readFile(username, path, resolve);

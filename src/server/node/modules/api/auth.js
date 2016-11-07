@@ -72,10 +72,10 @@ module.exports.login = function(http, data) {
 
     _instance.getAuth().login(http, data).then(function(userData) {
       if ( typeof userData.groups === 'undefined' ) {
-        _instance.getStorage().getGroups(http, function(groups) {
+        _instance.getStorage().getGroups(userData.username).then(function(groups) {
           userData.groups = groups;
           _proceed(userData);
-        });
+        }).catch(_fail);
       } else {
         _proceed(userData);
       }

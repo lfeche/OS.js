@@ -34,7 +34,7 @@ var pool;
 
 module.exports.setSettings = function(username, settings) {
   return new Promise(function(resolve, reject) {
-    _utils.mysqlQuery(pool, 'UPDATE `users` SET `settings` = ? WHERE `username` = ? LIMIT 1;', [settings, username], function(err, row) {
+    _utils.mysqlQuery(pool, 'UPDATE `users` SET `settings` = ? WHERE `username` = ? LIMIT 1;', [JSON.stringify(settings), username], function(err, row) {
       if ( err ) {
         reject(err);
       } else {
@@ -62,9 +62,19 @@ module.exports.getSettings = function(username) {
 };
 
 module.exports.getGroups = function(username) {
-  // This is handled in the Authenticator instead
-  return new Promise(function(resolve) {
-    resolve([]); // Unused in this case
+  return new Promise(function(resolve, reject) {
+    _utils.mysqlQuery(pool, 'SELECT `groups` FROM `users` WHERE `username` = ? LIMIT 1;', [username], function(err, row) {
+      row = row || {};
+      if ( err ) {
+        reject(err);
+      } else {
+        var json = {};
+        try {
+          json = JSON.parse(row.groups);
+        } catch (e) {}
+        resolve(json);
+      }
+    }, true);
   });
 };
 

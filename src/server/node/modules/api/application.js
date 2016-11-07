@@ -45,7 +45,7 @@ const _instance = require('./../../lib/instance.js');
  *
  * @param   {String}        data.path      Application path
  * @param   {String}        data.method    Application method name
- * @param   {Object}        data.arguments Application method arguments
+ * @param   {Object}        data.args      Application method arguments
  *
  * @function application
  * @memberof modules.api
@@ -56,7 +56,7 @@ module.exports.application = function(http, data, resolve, reject) {
   /*eslint dot-notation: "off"*/
   const apath = data.path || null;
   const ameth = data.method || null;
-  const aargs = data['arguments'] || {};
+  const aargs = data.args || {};
 
   const manifest = instance.PACKAGES[apath] || {};
   const filename = manifest && manifest._indexFile ? manifest._indexFile : 'api.js';

@@ -453,7 +453,8 @@
       application: this.__iter,
       path: this.__path,
       method: method,
-      'arguments': args, __loading: showLoading
+      args: args,
+      __loading: showLoading
     }, cb);
   };
 

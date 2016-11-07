@@ -76,7 +76,7 @@ abstract class Core
     $path = empty($request->data['path']) ? null : $request->data['path'];
     $an = empty($request->data['application']) ? null : $request->data['application'];
     $am = empty($request->data['method']) ? null : $request->data['method'];
-    $aa = empty($request->data['request->data']) ? Array() : $request->data['request->data'];
+    $aa = empty($request->data['args']) ? Array() : $request->data['args'];
 
     $apath = DIR_PACKAGES . '/' . $path . '/api.php';
     if ( !file_exists($apath) ) {

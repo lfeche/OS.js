@@ -14,7 +14,7 @@
   function _callAPI(m, a, cb) {
     instance.API.application({
       data: a
-    }, function(result) {
+    }, a, function(result) {
       cb(null, result);
     }, function(error) {
       cb(error);
@@ -103,7 +103,7 @@
           _callAPI('application', {
             path: 'default/Settings',
             method: 'test',
-            'arguments': {}
+            args: {}
           }, function(error, result) {
             assert.equal(null, error);
             assert.equal('test', result);
@@ -115,7 +115,7 @@
           _callAPI('application', {
             path: 'default/Settings',
             method: 'xxx',
-            'arguments': {}
+            args: {}
           }, function(error, result) {
             assert.notEqual(null, error);
             done();
@@ -126,7 +126,7 @@
           _callAPI('application', {
             path: 'doesnotexist/PackageName',
             method: 'xxx',
-            'arguments': {}
+            args: {}
           }, function(error, result) {
             assert.notEqual(null, error);
             done();

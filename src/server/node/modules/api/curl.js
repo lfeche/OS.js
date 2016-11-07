@@ -39,8 +39,6 @@ const _instance = require('./../../lib/instance.js');
  *
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Object}           args          Request args
- * @param   {Function}         resolve       Resolves the Promise
- * @param   {Function}         reject        Rejects the Promise
  *
  * @param   {String}    args.method                HTTP Call method (GET/POST/HEAD)
  * @param   {String}    args.url                   HTTP Call URL
@@ -55,7 +53,7 @@ const _instance = require('./../../lib/instance.js');
  * @function curl
  * @memberof modules.api
  */
-module.exports.curl = function(http, args, resolve, reject) {
+module.exports.curl = function(http, args) {
   const instance = _instance.getInstance();
   const url = args.url;
 
@@ -124,20 +122,22 @@ module.exports.curl = function(http, args, resolve, reject) {
     };
   })();
 
-  require('request')(curlRequest.opts, function(error, response, body) {
-    if ( error ) {
-      return reject(error);
-    }
+  return new Promise(function(resolve, reject) {
+    require('request')(curlRequest.opts, function(error, response, body) {
+      if ( error ) {
+        return reject(error);
+      }
 
-    if ( curlRequest.binary && body ) {
-      body = 'data:' + curlRequest.mime + ';base64,' + (body.toString('base64'));
-    }
+      if ( curlRequest.binary && body ) {
+        body = 'data:' + curlRequest.mime + ';base64,' + (body.toString('base64'));
+      }
 
-    resolve({
-      httpVersion: response.httpVersion,
-      httpCode: response.statusCode,
-      headers: response.headers,
-      body: body
+      resolve({
+        httpVersion: response.httpVersion,
+        httpCode: response.statusCode,
+        headers: response.headers,
+        body: body
+      });
     });
   });
 };

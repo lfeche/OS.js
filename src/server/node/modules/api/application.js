@@ -40,8 +40,6 @@ const _instance = require('./../../lib/instance.js');
  *
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Object}           data          Request data
- * @param   {Function}         resolve       Resolves the Promise
- * @param   {Function}         reject        Rejects the Promise
  *
  * @param   {String}        data.path      Application path
  * @param   {String}        data.method    Application method name
@@ -50,7 +48,7 @@ const _instance = require('./../../lib/instance.js');
  * @function application
  * @memberof modules.api
  */
-module.exports.application = function(http, data, resolve, reject) {
+module.exports.application = function(http, data) {
   const instance = _instance.getInstance();
 
   /*eslint dot-notation: "off"*/
@@ -64,38 +62,40 @@ module.exports.application = function(http, data, resolve, reject) {
   const aroot = _path.join(instance.DIRS.packages, apath);
   const fpath = _path.join(aroot, filename);
 
-  var found = null;
+  return new Promise(function(resolve, reject) {
+    var found = null;
 
-  try {
-    const module = require(fpath);
-    if ( typeof module.api === 'object' ) {
-      if ( typeof module.api[ameth] === 'function' ) {
-        found = function applicationApiCall() {
-          module.api[ameth](instance, http, resolve, reject, aargs);
-        };
+    try {
+      const module = require(fpath);
+      if ( typeof module.api === 'object' ) {
+        if ( typeof module.api[ameth] === 'function' ) {
+          found = function applicationApiCall() {
+            module.api[ameth](instance, http, resolve, reject, aargs);
+          };
+        }
+      } else {
+        // Backward compatible with old API
+        if ( typeof module[ameth] === 'function' ) {
+          found = function backwardCompatibleApplicationApiCall() {
+            module[ameth](aargs, function(error, result) {
+              if ( error ) {
+                reject(error);
+              } else {
+                resolve(result);
+              }
+            }, http.request, http.response, instance.CONFIG);
+          };
+        }
       }
-    } else {
-      // Backward compatible with old API
-      if ( typeof module[ameth] === 'function' ) {
-        found = function backwardCompatibleApplicationApiCall() {
-          module[ameth](aargs, function(error, result) {
-            if ( error ) {
-              reject(error);
-            } else {
-              resolve(result);
-            }
-          }, http.request, http.response, instance.CONFIG);
-        };
-      }
+    } catch ( e ) {
+      instance.LOGGER.log(instance.LOGGER.WARNING, e.stack, e.trace);
+      return reject('Application API error or missing: ' + e.toString(), null);
     }
-  } catch ( e ) {
-    instance.LOGGER.log(instance.LOGGER.WARNING, e.stack, e.trace);
-    return reject('Application API error or missing: ' + e.toString(), null);
-  }
 
-  if ( found ) {
-    found();
-  } else {
-    reject('No such Application API method.')
-  }
+    if ( found ) {
+      found();
+    } else {
+      reject('No such Application API method.')
+    }
+  });
 };

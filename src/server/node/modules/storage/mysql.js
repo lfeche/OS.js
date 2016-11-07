@@ -62,6 +62,7 @@ module.exports.getSettings = function(username) {
 };
 
 module.exports.getGroups = function(username) {
+  // This is handled in the Authenticator instead
   return new Promise(function(resolve) {
     resolve([]); // Unused in this case
   });

@@ -39,48 +39,50 @@ const _instance = require('./../../lib/instance.js');
  *
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {Object}           data          Request data
- * @param   {Function}         resolve       Resolves the Promise
- * @param   {Function}         reject        Rejects the Promise
  *
  * @function login
  * @memberof modules.api
  */
-module.exports.login = function(http, data, resolve, reject) {
-  function _fail(e) {
-    http.session.set('username', null);
-    http.session.set('groups', null);
-    reject(e);
-  }
+module.exports.login = function(http, data) {
+  function _login(resolve, reject) {
+    function _fail(e) {
+      http.session.set('username', null);
+      http.session.set('groups', null);
+      reject(e);
+    }
 
-  function _proceed(userData) {
-    http.session.set('username', userData.username);
-    http.session.set('groups', JSON.stringify(userData.groups));
+    function _proceed(userData) {
+      http.session.set('username', userData.username);
+      http.session.set('groups', JSON.stringify(userData.groups));
 
-    _instance.getStorage().getSettings(userData.username).then(function(userSettings) {
-      _instance.getStorage().getBlacklist(userData.username).then(function(blacklist) {
-        http.session.set('username', userData.username);
-        http.session.set('groups', JSON.stringify(userData.groups));
+      _instance.getStorage().getSettings(userData.username).then(function(userSettings) {
+        _instance.getStorage().getBlacklist(userData.username).then(function(blacklist) {
+          http.session.set('username', userData.username);
+          http.session.set('groups', JSON.stringify(userData.groups));
 
-        resolve({
-          userData: userData,
-          userSettings: userSettings,
-          blacklistedPackages: blacklist
-        });
+          resolve({
+            userData: userData,
+            userSettings: userSettings,
+            blacklistedPackages: blacklist
+          });
 
+        }).catch(_fail);
       }).catch(_fail);
+    }
+
+    _instance.getAuth().login(http, data).then(function(userData) {
+      if ( typeof userData.groups === 'undefined' ) {
+        _instance.getStorage().getGroups(http, function(groups) {
+          userData.groups = groups;
+          _proceed(userData);
+        });
+      } else {
+        _proceed(userData);
+      }
     }).catch(_fail);
   }
 
-  _instance.getAuth().login(http, data).then(function(userData) {
-    if ( typeof userData.groups === 'undefined' ) {
-      _instance.getStorage().getGroups(http, function(groups) {
-        userData.groups = groups;
-        _proceed(userData);
-      });
-    } else {
-      _proceed(userData);
-    }
-  }).catch(_fail);
+  return new Promise(_login);
 };
 
 /**
@@ -94,11 +96,13 @@ module.exports.login = function(http, data, resolve, reject) {
  * @memberof modules.api
  */
 module.exports.logout = function(http, resolve, reject) {
-  return _instance.getAuth().logout(http).then(function(arg) {
-    http.session.set('username', null);
-    http.session.set('groups', null);
+  return new Promise(function(resolve, reject) {
+    _instance.getAuth().logout(http).then(function(arg) {
+      http.session.set('username', null);
+      http.session.set('groups', null);
 
-    resolve(arg);
-  }).catch(reject);
+      resolve(arg);
+    }).catch(reject);
+  });
 };
 

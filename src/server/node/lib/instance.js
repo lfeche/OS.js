@@ -428,7 +428,7 @@ function request(http) {
 
   function _apiCall() {
     _checkPermission('api', {method: http.endpoint}, http.data).then(function() {
-      instance.API[http.endpoint](http, http.data, _resolveResponse, _rejectResponse);
+      instance.API[http.endpoint](http, http.data).then(_resolveResponse).catch(_rejectResponse);
     }).catch(_rejectResponse);
   }
 

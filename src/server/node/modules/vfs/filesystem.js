@@ -418,7 +418,7 @@ const VFS = {
   fileinfo: function(http, args, resolve, reject) {
     const resolved = _vfs.parseVirtualPath(args.path, http);
 
-    xistsWrapper(false, resolved.real, function() {
+    existsWrapper(false, resolved.real, function() {
       const info = createFileIter(resolved.query, resolved.real, null);
       const mime = _vfs.getMime(resolved.real);
 

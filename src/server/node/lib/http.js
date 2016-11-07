@@ -173,7 +173,7 @@ function createHttpResponder(instance, response) {
   }
 
   function _stream(path, stream, code, mime) {
-    if ( !mime ) {
+    if ( !mime && path ) {
       mime = _vfs.getMime(path);
     }
 

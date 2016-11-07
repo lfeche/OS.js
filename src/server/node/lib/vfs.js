@@ -89,7 +89,7 @@ module.exports.request = function(http, method, args) {
   return new Promise(function(resolve, reject) {
     transport.request(http, method, args).then(function(data) {
       if ( method === 'read' && data instanceof _fstream.Reader ) {
-        return http.respond.stream(data);
+        return http.respond.stream(data.path, data);
       }
       resolve(data);
     }).catch(reject);

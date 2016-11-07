@@ -152,6 +152,7 @@ module.exports._request = function(http, method, args) {
  */
 module.exports._vrequest = function(method, args, options) {
   return createRequest({
+    _virtual: true,
     request: {},
     session: {
       get: function(k) {
@@ -246,13 +247,6 @@ module.exports.parseVirtualPath = function(query, options) {
     query = query.path || query.root || query.src || '';
   }
 
-  const isExternal = typeof options.request !== 'undefined';
-  if ( isExternal ) {
-    options = {
-      username: options.session.get('username')
-    };
-  }
-
   const instance = _instance.getInstance();
   const mountpoints = instance.CONFIG.vfs.mounts || {};
 
@@ -261,7 +255,7 @@ module.exports.parseVirtualPath = function(query, options) {
   const path = _path.resolve(String(parts[2]).replace(/^\/+?/, '/').replace(/^\/?/, '/'));
 
   const mount = mountpoints[protocol];
-  if ( !isExternal && protocol === '$' ) {
+  if ( !options._virtual && protocol === '$' ) {
     realPath = '/';
   } else {
     if ( typeof mount === 'object' ) {
@@ -269,6 +263,12 @@ module.exports.parseVirtualPath = function(query, options) {
     } else if ( typeof mount === 'string' ) {
       realPath = mount;
     }
+  }
+
+  if ( typeof options.request !== 'undefined' ) { // via `http` object
+    options = {
+      username: options.session.get('username')
+    };
   }
 
   options.protocol = protocol;

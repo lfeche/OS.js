@@ -30,46 +30,58 @@
 const _passwd = require('passwd-linux');
 const _userid = require('userid');
 
-module.exports.login = function(http, resolve, reject) {
-  _passwd.checkPass(login.username, login.password, function(err, res) {
-    if ( !err && res !== 'passwordCorrect' ) {
-      err = 'Invalid credentials';
-    }
+module.exports.login = function(http, data) {
+  return new Promise(function(resolve, reject) {
+    _passwd.checkPass(data.username, data.password, function(err, res) {
+      if ( !err && res !== 'passwordCorrect' ) {
+        err = 'Invalid credentials';
+      }
 
-    if ( err ) {
-      reject(err);
-    } else {
-      resolve({
-        id: _userid.uid(login.username),
-        username: login.username,
-        name: login.username
-      });
-    }
+      if ( err ) {
+        reject(err);
+      } else {
+        resolve({
+          id: _userid.uid(data.username),
+          username: data.username,
+          name: data.username
+        });
+      }
+    });
   });
 };
 
-module.exports.logout = function(http, resolve, reject) {
-  resolve(true);
+module.exports.logout = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.manage = function(http, resolve, reject) {
-  reject('Not available');
+module.exports.manage = function(http) {
+  return new Promise(function(resolve, reject) {
+    reject('Not available');
+  });
 };
 
-module.exports.initSession = function(http, resolve, reject) {
-  resolve(true);
+module.exports.initSession = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.checkPermission = function(http, resolve, reject, type, options) {
-  resolve(true);
+module.exports.checkPermission = function(http, type, options) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.checkSession = function(http, resolve, reject) {
-  if ( http.session.get('username') ) {
-    resolve();
-  } else {
-    reject('You have no OS.js Session, please log in!');
-  }
+module.exports.checkSession = function(http) {
+  return new Promise(function(resolve, reject) {
+    if ( http.session.get('username') ) {
+      resolve();
+    } else {
+      reject('You have no OS.js Session, please log in!');
+    }
+  });
 };
 
 module.exports.register = function(config) {

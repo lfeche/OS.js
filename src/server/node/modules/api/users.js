@@ -38,15 +38,16 @@ const _instance = require('./../../lib/instance.js');
  * Manage Users
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           data          Request data
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  *
- * @param   {String}    http.data.command    Command name
- * @param   {Object}    http.data.args       Command arguments
+ * @param   {String}    data.command    Command name
+ * @param   {Object}    data.args       Command arguments
  *
  * @function users
  * @memberof modules.api
  */
-module.exports.users = function(http, resolve, reject) {
-  return _instance.getAuth().manage.apply(null, arguments);
+module.exports.users = function(http, data, resolve, reject) {
+  return _instance.getAuth().manage(http, data).then(resolve).catch(reject);
 };

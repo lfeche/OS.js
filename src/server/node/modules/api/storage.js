@@ -38,15 +38,16 @@ const _instance = require('./../../lib/instance.js');
  * Attempt to store settings
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           data          Request data
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  *
  * @function settings
  * @memberof modules.api
  */
-module.exports.settings = function(http, resolve, reject) {
+module.exports.settings = function(http, data, resolve, reject) {
   const username = http.session.get('username');
-  const settings = http.data.settings;
+  const settings = data.settings;
 
   return _instance.getStorage().setSettings(username, settings).then(resolve).catch(reject);
 };

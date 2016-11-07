@@ -33,9 +33,9 @@ const _utils = require('./../../lib/utils.js');
 
 var pool;
 
-module.exports.login = function(http) {
+module.exports.login = function(http, data) {
   const q = 'SELECT `id`, `username`, `name`, `groups`, `password` FROM `users` WHERE `username` = ? LIMIT 1;';
-  const a = [http.data.username];
+  const a = [data.username];
 
   return new Promise(function(resolve, reject) {
     function _invalid() {
@@ -58,7 +58,7 @@ module.exports.login = function(http) {
 
     function _auth(row) {
       const hash = row.password.replace(/^\$2y(.+)$/i, '\$2a$1');
-      _bcrypt.compare(http.data.password, hash, function(err, res) {
+      _bcrypt.compare(data.password, hash, function(err, res) {
         if ( err ) {
           reject(err);
         } else if ( res === true ) {

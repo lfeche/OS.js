@@ -38,18 +38,19 @@ const _pm = require('./../../lib/packagemanager.js');
  * Manage Packages
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           data          Request data
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  *
- * @param   {String}    http.data.command    Command name
- * @param   {Object}    http.data.args       Command arguments
+ * @param   {String}    data.command    Command name
+ * @param   {Object}    data.args       Command arguments
  *
  * @function packages
  * @memberof modules.api
  */
-module.exports.packages = function(http, resolve, reject) {
-  const command = http.data.command;
-  const args = http.data.args || {};
+module.exports.packages = function(http, data, resolve, reject) {
+  const command = data.command;
+  const args = data.args || {};
 
   if ( _pm[command] ) {
     _pm[command](http, resolve, reject, args);

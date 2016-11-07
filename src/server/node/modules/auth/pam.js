@@ -30,16 +30,16 @@
 const _pam = require('authenticate-pam');
 const _userid = require('userid');
 
-module.exports.login = function(http) {
+module.exports.login = function(http, data) {
   return new Promise(function(resolve, reject) {
-    _pam.authenticate(http.data.username, http.data.password, function(err) {
+    _pam.authenticate(data.username, data.password, function(err) {
       if ( err ) {
         reject(err);
       } else {
         resolve({
-          id: _userid.uid(http.data.username),
-          username: http.data.username,
-          name: http.data.username
+          id: _userid.uid(data.username),
+          username: data.username,
+          name: data.username
         });
       }
     });

@@ -28,7 +28,7 @@
  * @licence Simplified BSD License
  */
 
-module.exports.login = function(http) {
+module.exports.login = function(http, data) {
   return new Promise(function(resolve, reject) {
     resolve({
       id: 0,

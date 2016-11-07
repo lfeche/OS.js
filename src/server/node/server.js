@@ -28,8 +28,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Check blacklisted packages
-// TODO: Nullify session on logout
 // TODO: Fix proxies according to specced docs (htaccess is broken atm)
 
 const _instance = require('./lib/instance.js');

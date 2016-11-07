@@ -32,8 +32,9 @@
  * Handles user login attempts
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           data          Request data
  */
-module.exports.login = function(http) {
+module.exports.login = function(http, data) {
   return new Promise(function(resolve, reject) {
     resolve({
       id: 0,

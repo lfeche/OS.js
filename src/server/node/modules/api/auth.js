@@ -38,13 +38,14 @@ const _instance = require('./../../lib/instance.js');
  * Send a login attempt
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           data          Request data
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  *
  * @function login
  * @memberof modules.api
  */
-module.exports.login = function(http, resolve, reject) {
+module.exports.login = function(http, data, resolve, reject) {
   function _fail(e) {
     http.session.set('username', null);
     http.session.set('groups', null);
@@ -70,7 +71,7 @@ module.exports.login = function(http, resolve, reject) {
     }).catch(_fail);
   }
 
-  _instance.getAuth().login(http).then(function(userData) {
+  _instance.getAuth().login(http, data).then(function(userData) {
     if ( typeof userData.groups === 'undefined' ) {
       _instance.getStorage().getGroups(http, function(groups) {
         userData.groups = groups;
@@ -93,6 +94,11 @@ module.exports.login = function(http, resolve, reject) {
  * @memberof modules.api
  */
 module.exports.logout = function(http, resolve, reject) {
-  return _instance.getAuth().logout(http).then(resolve).catch(reject);
+  return _instance.getAuth().logout(http).then(function(arg) {
+    http.session.set('username', null);
+    http.session.set('groups', null);
+
+    resolve(arg);
+  }).catch(reject);
 };
 

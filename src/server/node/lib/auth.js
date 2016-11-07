@@ -121,7 +121,11 @@ module.exports.checkPermission = function(http, type, options) {
     return new Promise(function(resolve, reject) {
       if ( type === 'package' ) {
         _instance.getStorage().getBlacklist(username).then(function(blacklist) {
-          resolve(true); // FIXME
+          if ( blacklist && blacklist.indexOf(options.path) !== -1 ) {
+            reject('Access Denied!');
+          } else {
+            resolve();
+          }
         }).catch(function() {
           reject('Access Denied!');
         });

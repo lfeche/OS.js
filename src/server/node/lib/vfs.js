@@ -34,6 +34,7 @@
 
 const _path = require('path');
 const _instance = require('./instance.js');
+const _fstream = require('fstream');
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
@@ -65,6 +66,9 @@ function createRequest(http, method, args) {
 /**
  * Performs a VFS request
  *
+ * This function can actually interrupt the promise flow and make a HTTP
+ * response directly.
+ *
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           method        VFS Method name
  * @param   {Object}           args          VFS Method arguments
@@ -82,11 +86,22 @@ module.exports.request = function(http, method, args) {
     return reject('Cannot find VFS module for: ' + parsed.query);
   }
 
+  return new Promise(function(resolve, reject) {
+    transport.request(http, method, args).then(function(data) {
+      if ( method === 'read' && data instanceof _fstream.Reader ) {
+        return http.respond.stream(data);
+      }
+      resolve(data);
+    }).catch(reject);
+  });
+
   return transport.request(http, method, args);
 };
 
 /**
- * Performs a VFS request (for internal usage). This does not make any actual HTTP responses.
+ * Performs a VFS request (for internal usage).
+ *
+ * This does not make any actual HTTP responses, but rather always resolves.
  *
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           method        API Call Name

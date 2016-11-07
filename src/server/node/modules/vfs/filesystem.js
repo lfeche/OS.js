@@ -189,7 +189,7 @@ const VFS = {
 
     if ( options.raw !== false ) {
       if ( options.stream !== false ) {
-        http.respond.stream(args.path, _fstream.Reader(resolved.real));
+        resolve(_fstream.Reader(resolved.real));
       } else {
         _fs.readFile(resolved.real, function(e, r) {
           if ( e ) {

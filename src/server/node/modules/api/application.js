@@ -39,23 +39,24 @@ const _instance = require('./../../lib/instance.js');
  * Sends a request to an application
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           data          Request data
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  *
- * @param   {String}        http.data.path      Application path
- * @param   {String}        http.data.method    Application method name
- * @param   {Array}         http.data.arguments Application method arguments
+ * @param   {String}        data.path      Application path
+ * @param   {String}        data.method    Application method name
+ * @param   {Object}        data.arguments Application method arguments
  *
  * @function application
  * @memberof modules.api
  */
-module.exports.application = function(http, resolve, reject) {
+module.exports.application = function(http, data, resolve, reject) {
   const instance = _instance.getInstance();
 
   /*eslint dot-notation: "off"*/
-  const apath = http.data.path || null;
-  const ameth = http.data.method || null;
-  const aargs = http.data['arguments'] || {};
+  const apath = data.path || null;
+  const ameth = data.method || null;
+  const aargs = data['arguments'] || {};
 
   const manifest = instance.PACKAGES[apath] || {};
   const filename = manifest && manifest._indexFile ? manifest._indexFile : 'api.js';

@@ -38,25 +38,25 @@ const _instance = require('./../../lib/instance.js');
  * Do a HTTP request
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {Object}           args          Request args
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
  *
- * @param   {String}    http.data.method                HTTP Call method (GET/POST/HEAD)
- * @param   {String}    http.data.url                   HTTP Call URL
- * @param   {Object}    http.data.body                  HTTP POST Payload (alias: query)
- * @param   {Number}    http.data.timeout               Timeout in seconds (default=0)
- * @param   {Boolean}   [http.data.binary=false]        Return binary (default=false)
- * @param   {String}    [http.data.mime]                If binary, which MIME
- * @param   {Object}    [http.data.headers]             Custom HTTP headers ({key:val})
- * @param   {Boolean}   [http.data.json]                Send request as JSON (autodetected)
- * @param   {String}    [http.data.contentType]         Specify the content-type (autodetected)
+ * @param   {String}    args.method                HTTP Call method (GET/POST/HEAD)
+ * @param   {String}    args.url                   HTTP Call URL
+ * @param   {Object}    args.body                  HTTP POST Payload (alias: query)
+ * @param   {Number}    args.timeout               Timeout in seconds (default=0)
+ * @param   {Boolean}   [args.binary=false]        Return binary (default=false)
+ * @param   {String}    [args.mime]                If binary, which MIME
+ * @param   {Object}    [args.headers]             Custom HTTP headers ({key:val})
+ * @param   {Boolean}   [args.json]                Send request as JSON (autodetected)
+ * @param   {String}    [args.contentType]         Specify the content-type (autodetected)
  *
  * @function curl
  * @memberof modules.api
  */
-module.exports.curl = function(http, resolve, reject) {
+module.exports.curl = function(http, args, resolve, reject) {
   const instance = _instance.getInstance();
-  const args = http.data;
   const url = args.url;
 
   if ( !url ) {

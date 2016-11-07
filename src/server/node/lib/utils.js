@@ -28,9 +28,6 @@
  * @licence Simplified BSD License
  */
 
-const _path = require('path');
-const _instance = require('./instance.js');
-
 /**
  * @namespace lib.osjs
  */
@@ -164,61 +161,3 @@ module.exports.mysqlConfiguration = function(config) {
   return ccfg;
 };
 
-/**
- * Initializes a session
- *
- * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {String}           str           String to resolve
- * @param   {String}           [protocol]    Resolved protocol name (for internal paths)
- *
- * @returns {String}
- *
- * @function resolveDirectory
- * @memeberof lib.osjs
- */
-module.exports.resolveDirectory = function(http, str, protocol) {
-  const instance = _instance.getInstance();
-  const rmap = {
-    '%DIST%': function() {
-      return instance.DIST;
-    },
-    '%UID%': function() {
-      return http.session.get('username');
-    },
-    '%USERNAME%': function() {
-      return http.session.get('username');
-    },
-    '%DROOT%': function() {
-      return instance.DIRS.root;
-    },
-    '%MOUNTPOINT%': function() {
-      return protocol;
-    }
-  };
-
-  Object.keys(rmap).forEach(function(k) {
-    str = str.replace(new RegExp(k, 'g'), rmap[k]());
-  });
-
-  return str;
-};
-
-/**
- * Flattens a virtual path to avoid going down below the mount root
- *
- * @param   {ServerRequest}    http         OS.js Server Request
- * @param   {String}           path         The virtual path
- *
- * @returns {String}
- *
- * @function resolveDirectory
- * @memeberof lib.osjs
- */
-module.exports.flattenVirtualPath = function(path) {
-  const parts = path.split(/(.*)\:\/\/(.*)/);
-  const protocol = parts[1];
-  const corrections = String(parts[2]).replace(/^\/+?/, '/').replace(/\/+/g, '/');
-  const resolved = _path.resolve(corrections) || '/';
-
-  return protocol + '://' + resolved;
-};

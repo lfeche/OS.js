@@ -417,9 +417,17 @@ function request(http) {
 
   // Wrappers for performing API calls
   function _vfsCall() {
-    _checkPermission('fs', {method: http.endpoint.replace(/(^get\/)?/, ''), args: http.data}).then(function() {
+    var method = http.endpoint.replace(/(^get\/)?/, '');
+    var args = http.data;
+
+    if ( http.endpoint.match(/^get\//) ) {
+      method = 'read';
+      args = {path: http.endpoint.replace(/(^get\/)?/, '')};
+    }
+
+    _checkPermission('fs', {method: method, args: args}).then(function() {
       (new Promise(function(resolve, reject) {
-        _osjs.vfs.request(http, resolve, reject);
+        _osjs.vfs.request(http, method, args, resolve, reject);
       })).then(_resolveResponse).catch(_rejectResponse);
     }).catch(_rejectResponse);
   }

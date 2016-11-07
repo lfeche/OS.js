@@ -32,107 +32,12 @@
  * @namespace lib.vfs
  */
 
-const _auth = require('./auth.js');
-const _utils = require('./utils.js');
+const _path = require('path');
 const _instance = require('./instance.js');
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
 ///////////////////////////////////////////////////////////////////////////////
-
-/**
- * Extract path from object
- */
-function getPathFromArgs(method, args) {
-  const argumentMap = {
-    _default: function(args, dest) {
-      return args.path;
-    },
-    freeSpace: function(args) {
-      return args.root;
-    },
-    move: function(args, dest) {
-      return dest ? args.dest : args.src;
-    },
-    copy: function(args, dest) {
-      return dest ? args.dest : args.src;
-    }
-  };
-  return _utils.flattenVirtualPath((argumentMap[method] || argumentMap._default)(args));
-}
-
-/**
- * Parses virtual path
- */
-function getParsedVirtualPath(query) {
-  const parts = query.split(/(.*)\:\/\/(.*)/);
-  const path = String(parts[2]).replace(/^\/+?/, '/').replace(/^\/?/, '/');
-  return {
-    query: parts[1] + '://' + path,
-    protocol: parts[1],
-    path: path
-  };
-}
-
-/**
- * Gets the transport by protocol
- */
-function getTransportByProtocol(protocol) {
-  const instance = _instance.getInstance();
-
-  var transportName = '__default__';
-  if ( protocol !== '$' ) {
-    const mountpoints = instance.CONFIG.vfs.mounts || {};
-    const mount = mountpoints[protocol];
-
-    if ( typeof mount === 'object' ) {
-      if ( typeof mount.transport === 'string' ) {
-        transportName = mount.transport;
-      }
-    }
-  }
-
-  return instance.VFS.find(function(module) {
-    return module.name === transportName;
-  });
-}
-
-/**
- * Finds a transport
- */
-function findTransport(http, method, args) {
-  const instance = _instance.getInstance();
-  const query = getPathFromArgs(method, args);
-  const parsed = getParsedVirtualPath(query);
-
-  if ( !http._virtual ) {
-    if ( parsed.protocol === '$' ) {
-      return false;
-    }
-
-    const mountpoints = instance.CONFIG.vfs.mounts || {};
-    const mount = mountpoints[parsed.protocol];
-
-    if ( typeof mount === 'object' ) {
-      const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
-      if ( mount.enabled === false || (mount.ro === true && writeableMap.indexOf(method) !== -1) ) {
-        return false;
-      }
-    }
-
-    const groups = instance.CONFIG.vfs.groups || {};
-    if ( groups[parsed.protocol] ) {
-      if ( !_auth.hasGroup(instance, http, groups[parsed.protocol]) ) {
-        return false;
-      }
-    }
-  }
-
-  return Object.freeze({
-    parsed: Object.freeze(parsed),
-    transport: getTransportByProtocol(parsed.protocol)
-  });
-}
 
 function createRequest(http, method, args) {
   return new Promise(function(resolve, reject) {
@@ -152,7 +57,7 @@ function createRequest(http, method, args) {
       json: _nullResponder
     };
 
-    module.exports.request(newHttp, resolve, reject);
+    module.exports.request(newHttp, method, args, resolve, reject);
   });
 }
 
@@ -164,29 +69,25 @@ function createRequest(http, method, args) {
  * Performs a VFS request
  *
  * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {String}           method        VFS Method name
+ * @param   {Object}           args          VFS Method arguments
  * @param   {Function}         resolve       Resolves the Promise
  * @param   {Function}         reject        Rejects the Promise
- * @param   {Object}           args          API Call Arguments
  *
  * @function request
  * @memberof lib.vfs
  */
-module.exports.request = function(http, resolve, reject) {
-  const data = (http.request && http.request.method) === 'GET' ? {path: http.endpoint.replace(/(^get\/)?/, '')} : http.data;
-  const fn = http.request.method === 'GET' ? 'read' : http.endpoint;
-  const found = findTransport(http, fn, data);
+module.exports.request = function(http, method, args, resolve, reject) {
+  const parsed = module.exports.parseVirtualPath(args, {
+    username: http.session.get('username')
+  });
 
-  if ( found === false ) {
-    return reject('Operation denied!');
-  } else if ( !found.transport ) {
-    return reject('Cannot find VFS module for: ' + found.parsed.query);
+  const transport = module.exports.getTransport(parsed.transportName);
+  if ( !transport ) {
+    return reject('Cannot find VFS module for: ' + parsed.query);
   }
 
-  found.transport.request(http, {
-    query: found.parsed.query,
-    method: fn,
-    data: data
-  }, resolve, reject)
+  transport.request(http, method, args, resolve, reject);
 };
 
 /**
@@ -238,6 +139,103 @@ module.exports.getMime = function getMime(iter) {
 };
 
 /**
+ * Gets a transport by name
+ *
+ * @param   {String}    transportName     Name to query
+ *
+ * @return {Object}
+ * @function getTransport
+ * @memberof lib.vfs
+ */
+module.exports.getTransport = function(transportName) {
+  const instance = _instance.getInstance();
+  return transport = instance.VFS.find(function(module) {
+    return module.name === transportName;
+  });
+};
+
+/**
+ * Parses a virtual path
+ *
+ * @param   {String}    query     A virtual path
+ * @param   {Object}    options   A map used in resolution of path
+ *
+ * @example
+ *
+ *  .parseVirtualPath('home:///foo', {username: 'demo'})
+ *
+ * @return {Object}
+ * @function getTransport
+ * @memberof lib.vfs
+ */
+module.exports.parseVirtualPath = function(query, options) {
+  var transportName = '__default__';
+  var realPath = '';
+
+  if ( typeof query !== 'string' ) {
+    query = query.path || query.root || query.src || '';
+  }
+
+  const isExternal = typeof options.request !== 'undefined';
+  if ( isExternal ) {
+    options = {
+      username: options.session.get('username')
+    };
+  }
+
+  const instance = _instance.getInstance();
+  const mountpoints = instance.CONFIG.vfs.mounts || {};
+
+  const parts = query.split(/(.*)\:\/\/(.*)/);
+  const protocol = parts[1];
+  const path = _path.resolve(String(parts[2]).replace(/^\/+?/, '/').replace(/^\/?/, '/'));
+
+  if ( !isExternal && protocol === '$' ) {
+    realPath = '/';
+  } else {
+    const mount = mountpoints[protocol];
+    if ( typeof mount === 'object' ) {
+      if ( typeof mount.transport === 'string' ) {
+        transportName = mount.transport;
+      }
+      realPath = mount.destination;
+    } else if ( typeof mount === 'string' ) {
+      realPath = mount;
+    }
+  }
+
+  const rmap = {
+    '%DIST%': function() {
+      return instance.DIST;
+    },
+    '%UID%': function() {
+      return options.username;
+    },
+    '%USERNAME%': function() {
+      return options.username;
+    },
+    '%DROOT%': function() {
+      return instance.DIRS.root;
+    },
+    '%MOUNTPOINT%': function() {
+      return protocol;
+    }
+  };
+
+  Object.keys(rmap).forEach(function(k) {
+    realPath = realPath.replace(new RegExp(k, 'g'), rmap[k]());
+  });
+
+  return {
+    transportName: transportName,
+    query: protocol + '://' + path,
+    protocol: protocol,
+    real: _path.join(realPath, path),
+    path: path
+  };
+};
+
+/**
  * Performs a VFS request (for internal usage). This does not make any actual HTTP responses.
  *
  * @param   {ServerRequest}    http          OS.js Server Request
@@ -269,12 +267,11 @@ module.exports._request = function(http, method, args) {
  */
 module.exports._vrequest = function(method, args, options) {
   return createRequest({
-    _virtual: true,
     request: {},
     session: {
       get: function(k) {
         return options[k];
       }
     }
-  }, method, args, true);
+  }, method, args);
 };

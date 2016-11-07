@@ -33,6 +33,7 @@
  */
 
 const _instance = require('./instance.js');
+const _vfs = require('./vfs.js');
 
 /**
  * Initializes a session
@@ -62,12 +63,8 @@ module.exports.checkPermission = function(http, type, options) {
   const instance = _instance.getInstance();
   const groups = instance.CONFIG.api.groups;
 
-  function _check(checkGroups, resolve, reject) {
-    if ( typeof checkGroups === 'undefined' ) {
-      checkGroups = true;
-    }
-
-    if ( checkGroups ) {
+  function checkApiPermission() {
+    return new Promise(function(resolve, reject) {
       var checks = [];
       if ( type === 'fs' ) {
         checks = [type];
@@ -82,14 +79,60 @@ module.exports.checkPermission = function(http, type, options) {
       } else {
         reject('Access denied!');
       }
-    } else {
-      resolve();
+    });
+  }
+
+  function checkMountPermission() {
+    function _check() {
+      const parsed = _vfs.parseVirtualPath(options.args, http);
+      const mountpoints = instance.CONFIG.vfs.mounts || {};
+      const mount = mountpoints[parsed.protocol];
+      const writeableMap = ['upload', 'write', 'delete', 'copy', 'move', 'mkdir'];
+      const groups = instance.CONFIG.vfs.groups || {};
+
+      if ( typeof mount === 'object' ) {
+        if ( mount.enabled === false || (mount.ro === true && writeableMap.indexOf(options.method) !== -1) ) {
+          return false;
+        }
+      }
+
+      if ( groups[parsed.protocol] ) {
+        if ( !module.exports.hasGroup(instance, http, groups[parsed.protocol]) ) {
+          return false;
+        }
+      }
+
+      return true;
     }
+
+    return new Promise(function(resolve, reject) {
+      if ( type === 'fs' ) {
+        if ( _check() ) {
+          resolve();
+        } else {
+          reject('Access Denied!');
+        }
+      } else {
+        resolve();
+      }
+    });
   }
 
   return new Promise(function(resolve, reject) {
     _instance.getAuth().checkPermission(http, function(checkGroups) {
-      _check(checkGroups, resolve, reject);
+      if ( typeof checkGroups === 'undefined' ) {
+        checkGroups = true;
+      }
+
+      if ( checkGroups ) {
+        checkApiPermission().then(function() {
+          checkMountPermission().then(resolve).catch(reject);
+        }).catch(reject);
+      } else {
+        resolve();
+      }
+
+      checkApiPermission(checkGroups, resolve, reject);
     }, reject, type, options);
   });
 }

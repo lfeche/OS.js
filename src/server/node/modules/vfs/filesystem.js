@@ -34,54 +34,16 @@ const _fstream = require('fstream');
 
 const _utils = require('./../../lib/utils.js');
 const _vfs = require('./../../lib/vfs.js');
-const _instance = require('./../../lib/instance.js');
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
- * Resolves a OS.js request path to a real filesystem path
- */
-function resolveRequestPath(http, query) {
-  query = _utils.flattenVirtualPath(query);
-
-  const parts = query.split(/(.*)\:\/\/(.*)/);
-  const protocol = parts[1];
-  const path = String(parts[2]).replace(/^\/+?/, '');
-  const mountpoints = _instance.getConfig().vfs.mounts || {};
-
-  // Figure out if this mountpoint is a filesystem path, or another transport
-  var found = mountpoints[protocol] || mountpoints['*'];
-  if ( http._virtual && protocol === '$' ) {
-    found = '/';
-  }
-
-  var real = null;
-  if ( typeof found === 'object' ) {
-    found = found.destination;
-  }
-
-  if ( typeof found === 'string' ) {
-    found = _utils.resolveDirectory(http, found, protocol);
-    real = _path.join(found, path);
-  }
-
-  query = protocol + '://' + path.replace(/^\/?/, '/');
-
-  return {
-    query: query,
-    protocol: protocol,
-    path: query,
-    real: real
-  };
-}
-
-/**
  * Create a read stream
  */
 function createReadStream(http, path) {
-  const resolved = resolveRequestPath(http, path);
+  const resolved = _vfs.parseVirtualPath(path, http);
   return new Promise(function(resolve, reject) {
     /*eslint new-cap: "off"*/
     resolve(_fstream.Reader(resolved.real, {
@@ -94,7 +56,7 @@ function createReadStream(http, path) {
  * Create a write stream
  */
 function createWriteStream(http, path) {
-  const resolved = resolveRequestPath(http, path);
+  const resolved = _vfs.parseVirtualPath(path, http);
   return new Promise(function(resolve, reject) {
     /*eslint new-cap: "off"*/
     resolve(_fstream.Writer(resolved.real));
@@ -214,7 +176,7 @@ function readDir(query, real, filter) {
 const VFS = {
 
   exists: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
     _fs.exists(resolved.real, function(exists) {
       resolve(exists);
     });
@@ -222,7 +184,7 @@ const VFS = {
 
   read: function(http, args, resolve, reject) {
     /*eslint new-cap: "off"*/
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
     const options = args.options || {};
 
     if ( options.raw !== false ) {
@@ -280,7 +242,7 @@ const VFS = {
     }
 
     const source = http.files.upload.path;
-    const dresolved = resolveRequestPath(http, http.data.path);
+    const dresolved = _vfs.parseVirtualPath(http.data.path, http);
     const dest = _path.join(dresolved.real, http.files.upload.name);
 
     existsWrapper(false, source, function() {
@@ -295,7 +257,7 @@ const VFS = {
   },
 
   write: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
     const options = args.options || {};
     var data = args.data || ''; // FIXME
 
@@ -321,7 +283,7 @@ const VFS = {
   },
 
   delete: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
     if ( ['', '.', '/'].indexOf() !== -1 ) {
       return reject('Permission denied');
     }
@@ -338,8 +300,8 @@ const VFS = {
   },
 
   copy: function(http, args, resolve, reject) {
-    const sresolved = resolveRequestPath(http, args.src);
-    const dresolved = resolveRequestPath(http, args.dest);
+    const sresolved = _vfs.parseVirtualPath(args.src, http);
+    const dresolved = _vfs.parseVirtualPath(args.dest, http);
 
     existsWrapper(false, sresolved.real, function() {
       existsWrapper(true, dresolved.real, function() {
@@ -361,8 +323,8 @@ const VFS = {
   },
 
   move: function(http, args, resolve, reject) {
-    const sresolved = resolveRequestPath(http, args.src);
-    const dresolved = resolveRequestPath(http, args.dest);
+    const sresolved = _vfs.parseVirtualPath(args.src, http);
+    const dresolved = _vfs.parseVirtualPath(args.dest, http);
 
     _fs.access(sresolved.real, _nfs.R_OK, function(err) {
       if ( err ) {
@@ -386,7 +348,7 @@ const VFS = {
   },
 
   mkdir: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
 
     existsWrapper(true, resolved.real, function() {
       _fs.mkdir(resolved.real, function(err) {
@@ -402,7 +364,7 @@ const VFS = {
   find: function(http, args, resolve, reject) {
     const qargs = args.args || {};
     const query = (qargs.query || '').toLowerCase();
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
 
     if ( !qargs.recursive ) {
       return readDir(resolved.path, resolved.real, function(iter) {
@@ -454,10 +416,10 @@ const VFS = {
   },
 
   fileinfo: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.path);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
 
     existsWrapper(false, resolved.real, function() {
-      const info = createFileIter(resolved.path, resolved.real, null);
+      const info = createFileIter(resolved.query, resolved.real, null);
       const mime = _vfs.getMime(resolved.real);
 
       readExif(resolved.real, mime).then(function(result) {
@@ -471,12 +433,12 @@ const VFS = {
   },
 
   scandir: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.path);
-    readDir(resolved.path, resolved.real).then(resolve).catch(reject);
+    const resolved = _vfs.parseVirtualPath(args.path, http);
+    readDir(resolved.query, resolved.real).then(resolve).catch(reject);
   },
 
   freeSpace: function(http, args, resolve, reject) {
-    const resolved = resolveRequestPath(http, args.root);
+    const resolved = _vfs.parseVirtualPath(args.root, http);
 
     try {
       require('diskspace').check(resolved.real, function(err, total, free, stat) {
@@ -492,11 +454,11 @@ const VFS = {
 // EXPORTS
 ///////////////////////////////////////////////////////////////////////////////
 
-module.exports.request = function(http, req, resolve, reject) {
-  if ( typeof VFS[req.method] === 'function' ) {
-    VFS[req.method](http, req.data, resolve, reject);
+module.exports.request = function(http, method, args, resolve, reject) {
+  if ( typeof VFS[method] === 'function' ) {
+    VFS[method](http, args, resolve, reject);
   } else {
-    reject('No such VFS method: ' + req.method);
+    reject('No such VFS method: ' + method);
   }
 };
 

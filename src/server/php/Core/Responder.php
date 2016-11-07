@@ -71,6 +71,10 @@ class Responder
   public function file($path, $mime = Null) {
     session_write_close();
 
+    if ( !file_exists($path) ) {
+      return $this->error('File not found', 404);
+    }
+
     if ( $handle = fopen($path, "rb") ) {
       $length = filesize($path);
 

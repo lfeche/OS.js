@@ -46,6 +46,7 @@ function createRequest(http, method, args) {
   }
 
   var newHttp = Object.assign({}, http);
+  newHttp._virtual = true;
   newHttp.endpoint = method;
   newHttp.data = args;
   newHttp.request.method = 'POST';
@@ -57,6 +58,27 @@ function createRequest(http, method, args) {
     json: _nullResponder
   };
   return module.exports.request(newHttp, method, args);
+}
+
+function getTransportName(query, mount) {
+  if ( typeof query !== 'string' ) {
+    query = query.path || query.root || query.src || '';
+  }
+
+  if ( !mount ) {
+    const protocol = query.split(':')[0];
+    const instance = _instance.getInstance();
+    const mountpoints = instance.CONFIG.vfs.mounts || {};
+    mount = mountpoints[protocol];
+  }
+
+  if ( mount && typeof mount === 'object' ) {
+    if ( typeof mount.transport === 'string' ) {
+      return mount.transport;
+    }
+  }
+
+  return '__default__';
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,11 +99,9 @@ function createRequest(http, method, args) {
  * @memberof lib.vfs
  */
 module.exports.request = function(http, method, args) {
-  const parsed = module.exports.parseVirtualPath(args, {
-    username: http.session.get('username')
-  });
+  const transportName = getTransportName(args);
+  const transport = module.exports.getTransport(transportName);
 
-  const transport = module.exports.getTransport(parsed.transportName);
   if ( !transport ) {
     return reject('Cannot find VFS module for: ' + parsed.query);
   }
@@ -220,7 +240,6 @@ module.exports.getTransport = function(transportName) {
  * @memberof lib.vfs
  */
 module.exports.parseVirtualPath = function(query, options) {
-  var transportName = '__default__';
   var realPath = '';
 
   if ( typeof query !== 'string' ) {
@@ -241,14 +260,11 @@ module.exports.parseVirtualPath = function(query, options) {
   const protocol = parts[1];
   const path = _path.resolve(String(parts[2]).replace(/^\/+?/, '/').replace(/^\/?/, '/'));
 
+  const mount = mountpoints[protocol];
   if ( !isExternal && protocol === '$' ) {
     realPath = '/';
   } else {
-    const mount = mountpoints[protocol];
     if ( typeof mount === 'object' ) {
-      if ( typeof mount.transport === 'string' ) {
-        transportName = mount.transport;
-      }
       realPath = mount.destination;
     } else if ( typeof mount === 'string' ) {
       realPath = mount;
@@ -257,10 +273,11 @@ module.exports.parseVirtualPath = function(query, options) {
 
   options.protocol = protocol;
   realPath = module.exports.resolvePathArguments(realPath, options);
+  query = protocol + '://' + path;
 
   return {
-    transportName: transportName,
-    query: protocol + '://' + path,
+    transportName: getTransportName(query, mount),
+    query: query,
     protocol: protocol,
     real: _path.join(realPath, path),
     path: path

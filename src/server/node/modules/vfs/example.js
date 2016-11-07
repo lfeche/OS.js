@@ -87,15 +87,15 @@ const VFS = {
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           method        VFS Method name
  * @param   {Object}           args          VFS Method arguments
- * @param   {Function}         resolve       Resolves the Promise
- * @param   {Function}         reject        Rejects the Promise
  */
-module.exports.request = function(http, method, args, resolve, reject) {
-  if ( typeof VFS[method] === 'function' ) {
-    VFS[method](http, args, resolve, reject);
-  } else {
-    reject('No such VFS method');
-  }
+module.exports.request = function(http, method, args) {
+  return new Promise(function(resolve, reject) {
+    if ( typeof VFS[method] === 'function' ) {
+      VFS[method](http, args, resolve, reject);
+    } else {
+      reject('No such VFS method');
+    }
+  });
 };
 
 /**

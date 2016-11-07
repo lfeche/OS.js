@@ -32,15 +32,15 @@
  * Handles user login attempts
  *
  * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {Function}         resolve       Resolve the promise
- * @param   {Function}         reject        Reject the promise
  */
-module.exports.login = function(http, resolve, reject) {
-  resolve({
-    id: 0,
-    username: 'Username',
-    name: 'Full User Name',
-    groups: ['admin']
+module.exports.login = function(http) {
+  return new Promise(function(resolve, reject) {
+    resolve({
+      id: 0,
+      username: 'Username',
+      name: 'Full User Name',
+      groups: ['admin']
+    });
   });
 };
 
@@ -48,11 +48,11 @@ module.exports.login = function(http, resolve, reject) {
  * Handles user logout attempts
  *
  * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {Function}         resolve       Resolve the promise
- * @param   {Function}         reject        Reject the promise
  */
-module.exports.logout = function(http, resolve, reject) {
-  resolve(true);
+module.exports.logout = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
 /**
@@ -63,50 +63,50 @@ module.exports.logout = function(http, resolve, reject) {
  * http.data.args.user = username
  *
  * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {Function}         resolve       Resolve the promise
- * @param   {Function}         reject        Reject the promise
  */
-module.exports.manage = function(http, resolve, reject) {
-  reject('Not available');
+module.exports.manage = function(http) {
+  return new Promise(function(resolve, reject) {
+    reject('Not available');
+  });
 };
 
 /**
  * Runs when a HTTP request is made
  *
  * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {Function}         resolve       Resolve the promise
- * @param   {Function}         reject        Reject the promise
  */
 module.exports.initSession = function(http, resolve, reject) {
-  resolve(true);
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
 /**
  * Checks the given permission
  *
  * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {Function}         resolve       Resolve the promise
- * @param   {Function}         reject        Reject the promise
  * @param   {String}           type          Permission type (vfs, api, package)
  * @param   {Object}           options       Permission options/arguments
  */
 module.exports.checkPermission = function(http, resolve, reject, type, options) {
-  resolve(true); // Return false to ignore internal group checking
+  return new Promise(function(resolve) {
+    resolve(true); // Return false to ignore internal group checking
+  });
 };
 
 /**
  * Checks if a session is available
  *
  * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {Function}         resolve       Resolve the promise
- * @param   {Function}         reject        Reject the promise
  */
-module.exports.checkSession = function(http, resolve, reject) {
-  if ( http.session.get('username') ) {
-    resolve();
-  } else {
-    reject('You have no OS.js Session, please log in!');
-  }
+module.exports.checkSession = function(http) {
+  return new Promise(function(resolve, reject) {
+    if ( http.session.get('username') ) {
+      resolve();
+    } else {
+      reject('You have no OS.js Session, please log in!');
+    }
+  });
 };
 
 /**

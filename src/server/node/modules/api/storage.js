@@ -45,5 +45,8 @@ const _instance = require('./../../lib/instance.js');
  * @memberof modules.api
  */
 module.exports.settings = function(http, resolve, reject) {
-  return _instance.getStorage().setSettings.apply(null, arguments);
+  const username = http.session.get('username');
+  const settings = http.data.settings;
+
+  return _instance.getStorage().setSettings(username, settings).then(resolve).catch(reject);
 };

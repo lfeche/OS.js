@@ -40,25 +40,22 @@ const _instance = require('./instance.js');
 ///////////////////////////////////////////////////////////////////////////////
 
 function createRequest(http, method, args) {
-  return new Promise(function(resolve, reject) {
-    function _nullResponder(arg) {
-      resolve(arg);
-    }
+  function _nullResponder(arg) {
+    resolve(arg);
+  }
 
-    var newHttp = Object.assign({}, http);
-    newHttp.endpoint = method;
-    newHttp.data = args;
-    newHttp.request.method = 'POST';
-    newHttp.respond = {
-      raw: _nullResponder,
-      error: _nullResponder,
-      file: _nullResponder,
-      stream: _nullResponder,
-      json: _nullResponder
-    };
-
-    module.exports.request(newHttp, method, args, resolve, reject);
-  });
+  var newHttp = Object.assign({}, http);
+  newHttp.endpoint = method;
+  newHttp.data = args;
+  newHttp.request.method = 'POST';
+  newHttp.respond = {
+    raw: _nullResponder,
+    error: _nullResponder,
+    file: _nullResponder,
+    stream: _nullResponder,
+    json: _nullResponder
+  };
+  return module.exports.request(newHttp, method, args);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,13 +68,11 @@ function createRequest(http, method, args) {
  * @param   {ServerRequest}    http          OS.js Server Request
  * @param   {String}           method        VFS Method name
  * @param   {Object}           args          VFS Method arguments
- * @param   {Function}         resolve       Resolves the Promise
- * @param   {Function}         reject        Rejects the Promise
  *
  * @function request
  * @memberof lib.vfs
  */
-module.exports.request = function(http, method, args, resolve, reject) {
+module.exports.request = function(http, method, args) {
   const parsed = module.exports.parseVirtualPath(args, {
     username: http.session.get('username')
   });
@@ -87,7 +82,48 @@ module.exports.request = function(http, method, args, resolve, reject) {
     return reject('Cannot find VFS module for: ' + parsed.query);
   }
 
-  transport.request(http, method, args, resolve, reject);
+  return transport.request(http, method, args);
+};
+
+/**
+ * Performs a VFS request (for internal usage). This does not make any actual HTTP responses.
+ *
+ * @param   {ServerRequest}    http          OS.js Server Request
+ * @param   {String}           method        API Call Name
+ * @param   {Object}           args          API Call Arguments
+ *
+ * @return  {Promise}
+ *
+ * @function _request
+ * @memberof lib.vfs
+ */
+module.exports._request = function(http, method, args) {
+  return createRequest(http, method, args);
+};
+
+/**
+ * Performs a VFS request, but for non-HTTP usage.
+ *
+ * This method supports usage of a special `$:///` mountpoint that points to the server root.
+ *
+ * @param   {String}           method        API Call Name
+ * @param   {Object}           args          API Call Arguments
+ * @param   {Object}           options       A map of options used to resolve paths internally
+ *
+ * @return  {Promise}
+ *
+ * @function _vrequest
+ * @memberof lib.vfs
+ */
+module.exports._vrequest = function(method, args, options) {
+  return createRequest({
+    request: {},
+    session: {
+      get: function(k) {
+        return options[k];
+      }
+    }
+  }, method, args);
 };
 
 /**
@@ -204,6 +240,32 @@ module.exports.parseVirtualPath = function(query, options) {
     }
   }
 
+  options.protocol = protocol;
+  realPath = module.exports.resolvePathArguments(realPath, options);
+
+  return {
+    transportName: transportName,
+    query: protocol + '://' + path,
+    protocol: protocol,
+    real: _path.join(realPath, path),
+    path: path
+  };
+};
+
+/**
+ * Resolves a path with special arguments
+ *
+ * @param   {String}    path              The query path
+ * @param   {Object}    options           Object that maps the arguments and values
+ *
+ * @return {String}
+ * @function resolvePathArguments
+ * @memberof lib.vfs
+ */
+module.exports.resolvePathArguments = function(path, options) {
+  options = options || {};
+
+  const instance = _instance.getInstance();
   const rmap = {
     '%DIST%': function() {
       return instance.DIST;
@@ -218,60 +280,13 @@ module.exports.parseVirtualPath = function(query, options) {
       return instance.DIRS.root;
     },
     '%MOUNTPOINT%': function() {
-      return protocol;
+      return options.protocol;
     }
   };
 
   Object.keys(rmap).forEach(function(k) {
-    realPath = realPath.replace(new RegExp(k, 'g'), rmap[k]());
+    path = path.replace(new RegExp(k, 'g'), rmap[k]());
   });
 
-  return {
-    transportName: transportName,
-    query: protocol + '://' + path,
-    protocol: protocol,
-    real: _path.join(realPath, path),
-    path: path
-  };
-};
-
-/**
- * Performs a VFS request (for internal usage). This does not make any actual HTTP responses.
- *
- * @param   {ServerRequest}    http          OS.js Server Request
- * @param   {String}           method        API Call Name
- * @param   {Object}           args          API Call Arguments
- *
- * @return  {Promise}
- *
- * @function _request
- * @memberof lib.vfs
- */
-module.exports._request = function(http, method, args) {
-  return createRequest(http, method, args);
-};
-
-/**
- * Performs a VFS request, but for non-HTTP usage.
- *
- * This method supports usage of a special `$:///` mountpoint that points to the server root.
- *
- * @param   {String}           method        API Call Name
- * @param   {Object}           args          API Call Arguments
- * @param   {Object}           options       A map of options used to resolve paths internally
- *
- * @return  {Promise}
- *
- * @function _vrequest
- * @memberof lib.vfs
- */
-module.exports._vrequest = function(method, args, options) {
-  return createRequest({
-    request: {},
-    session: {
-      get: function(k) {
-        return options[k];
-      }
-    }
-  }, method, args);
+  return path;
 };

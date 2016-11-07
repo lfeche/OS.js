@@ -454,12 +454,14 @@ const VFS = {
 // EXPORTS
 ///////////////////////////////////////////////////////////////////////////////
 
-module.exports.request = function(http, method, args, resolve, reject) {
-  if ( typeof VFS[method] === 'function' ) {
-    VFS[method](http, args, resolve, reject);
-  } else {
-    reject('No such VFS method: ' + method);
-  }
+module.exports.request = function(http, method, args) {
+  return new Promise(function(resolve, reject) {
+    if ( typeof VFS[method] === 'function' ) {
+      VFS[method](http, args, resolve, reject);
+    } else {
+      reject('No such VFS method: ' + method);
+    }
+  });
 };
 
 module.exports.createReadStream = createReadStream;

@@ -28,37 +28,49 @@
  * @licence Simplified BSD License
  */
 
-module.exports.login = function(http, resolve, reject) {
-  resolve({
-    id: 0,
-    username: 'demo',
-    name: 'Demo User',
-    groups: ['admin']
+module.exports.login = function(http) {
+  return new Promise(function(resolve, reject) {
+    resolve({
+      id: 0,
+      username: 'demo',
+      name: 'Demo User',
+      groups: ['admin']
+    });
   });
 };
 
-module.exports.logout = function(http, resolve, reject) {
-  resolve(true);
+module.exports.logout = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.manage = function(http, resolve, reject) {
-  reject('Not available');
+module.exports.manage = function(http) {
+  return new Promise(function(resolve, reject) {
+    reject('Not available');
+  });
 };
 
-module.exports.initSession = function(http, resolve, reject) {
-  resolve(true);
+module.exports.initSession = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.checkPermission = function(http, resolve, reject, type, options) {
-  resolve(true);
+module.exports.checkPermission = function(http, type, options) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.checkSession = function(http, resolve, reject) {
-  if ( http.session.get('username') ) {
-    resolve();
-  } else {
-    reject('You have no OS.js Session, please log in!');
-  }
+module.exports.checkSession = function(http) {
+  return new Promise(function(resolve, reject) {
+    if ( http.session.get('username') ) {
+      resolve();
+    } else {
+      reject('You have no OS.js Session, please log in!');
+    }
+  });
 };
 
 module.exports.register = function(config) {

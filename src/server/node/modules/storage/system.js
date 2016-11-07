@@ -28,7 +28,7 @@
  * @licence Simplified BSD License
  */
 const _fs = require('node-fs-extra');
-const _utils = require('./../../lib/utils.js');
+const _vfs = require('./../../lib/vfs.js');
 
 function _readFile(username, path, resolve) {
   function _done(data) {
@@ -45,36 +45,49 @@ function _readFile(username, path, resolve) {
   });
 }
 
-module.exports.setSettings = function(http, resolve, reject) {
-  const path = _utils.resolveDirectory(http, instance.CONFIG.modules.storage.system.settings);
-  _fs.writeFile(path, JSON.stringify(http.data.settings), function(err, res) {
-    if ( err ) {
-      reject(err);
-    } else {
-      resolve(true);
-    }
+module.exports.setSettings = function(username) {
+  const path = _vfs.resolvePathArguments(instance.CONFIG.modules.storage.system.settings, {
+    username: username
+  });
+
+  return new Promise(function(resolve, reject) {
+    _fs.writeFile(path, JSON.stringify(http.data.settings), function(err, res) {
+      if ( err ) {
+        reject(err);
+      } else {
+        resolve(true);
+      }
+    });
   });
 };
 
-module.exports.getSettings = function(http, resolve, reject) {
-  const path = _utils.resolveDirectory(http, instance.CONFIG.modules.storage.system.settings);
-  _readFile(null, path, resolve);
+module.exports.getSettings = function(username) {
+  const path = _vfs.resolvePathArguments(instance.CONFIG.modules.storage.system.settings, {
+    username: username
+  });
+  return new Promise(function(resolve) {
+    _readFile(null, path, resolve);
+  });
 };
 
-module.exports.getGroups = function(http, resolve, reject) {
-  const username = http.session.get('username');
+module.exports.getGroups = function(username) {
   const path = instance.CONFIG.modules.storage.system.groups;
-  _readFile(username, path, resolve);
+  return new Promise(function(resolve) {
+    _readFile(username, path, resolve);
+  });
 };
 
-module.exports.getBlacklist = function(http, resolve, reject) {
-  const username = http.session.get('username');
+module.exports.getBlacklist = function(username) {
   const path = instance.CONFIG.modules.storage.system.blacklist;
-  _readFile(username, path, resolve);
+  return new Promise(function(resolve) {
+    _readFile(username, path, resolve);
+  });
 };
 
-module.exports.setBlacklist = function(http, resolve, reject) {
-  resolve(true);
+module.exports.setBlacklist = function(username, list) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
 module.exports.register = function(config) {

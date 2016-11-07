@@ -30,46 +30,57 @@
 const _pam = require('authenticate-pam');
 const _userid = require('userid');
 
-module.exports.login = function(http, resolve, reject) {
-  _pam.authenticate(http.data.username, http.data.password, function(err) {
-    if ( err ) {
-      reject(err);
+module.exports.login = function(http) {
+  return new Promise(function(resolve, reject) {
+    _pam.authenticate(http.data.username, http.data.password, function(err) {
+      if ( err ) {
+        reject(err);
+      } else {
+        resolve({
+          id: _userid.uid(http.data.username),
+          username: http.data.username,
+          name: http.data.username
+        });
+      }
+    });
+  });
+};
+
+module.exports.logout = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
+};
+
+module.exports.manage = function(http) {
+  return new Promise(function(resolve, reject) {
+    reject('Not available');
+  });
+};
+
+module.exports.initSession = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
+};
+
+module.exports.checkPermission = function(http, type, options) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
+};
+
+module.exports.checkSession = function(http) {
+  return new Promise(function(resolve, reject) {
+    if ( http.session.get('username') ) {
+      resolve();
     } else {
-      resolve({
-        id: _userid.uid(http.data.username),
-        username: http.data.username,
-        name: http.data.username
-      });
+      reject('You have no OS.js Session, please log in!');
     }
   });
 };
 
-module.exports.logout = function(http, resolve, reject) {
-  resolve(true);
-};
-
-module.exports.manage = function(http, resolve, reject) {
-  reject('Not available');
-};
-
-module.exports.initSession = function(http, resolve, reject) {
-  resolve(true);
-};
-
-module.exports.checkPermission = function(http, resolve, reject, type, options) {
-  resolve(true);
-};
-
-module.exports.checkSession = function(http, resolve, reject) {
-  if ( http.session.get('username') ) {
-    resolve();
-  } else {
-    reject('You have no OS.js Session, please log in!');
-  }
-};
-
 module.exports.register = function(config) {
-  _config = config;
 };
 
 module.exports.destroy = function() {

@@ -28,24 +28,34 @@
  * @licence Simplified BSD License
  */
 
-module.exports.setSettings = function(http, resolve, reject) {
-  resolve(true);
+module.exports.setSettings = function(username, data) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
-module.exports.getSettings = function(http, resolve, reject) {
-  resolve({});
+module.exports.getSettings = function(username) {
+  return new Promise(function(resolve) {
+    resolve({});
+  });
 };
 
-module.exports.getGroups = function(http, resolve, reject) {
-  resolve([]); // Unused in this case
+module.exports.getGroups = function(username) {
+  return new Promise(function(resolve) {
+    resolve([]); // Unused in this case
+  });
 };
 
-module.exports.getBlacklist = function(http, resolve, reject) {
-  resolve([]);
+module.exports.getBlacklist = function(username) {
+  return new Promise(function(resolve) {
+    resolve([]);
+  });
 };
 
-module.exports.setBlacklist = function(http, resolve, reject) {
-  resolve(true);
+module.exports.setBlacklist = function(username, list) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
 module.exports.register = function(config) {

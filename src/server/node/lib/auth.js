@@ -44,9 +44,7 @@ const _vfs = require('./vfs.js');
  * @memberof lib.auth
  */
 module.exports.initSession = function(http) {
-  return new Promise(function(resolve, reject) {
-    _instance.getAuth().initSession(http, resolve, reject);
-  });
+  return _instance.getAuth().initSession(http);
 };
 
 /**
@@ -62,6 +60,7 @@ module.exports.initSession = function(http) {
 module.exports.checkPermission = function(http, type, options) {
   const instance = _instance.getInstance();
   const groups = instance.CONFIG.api.groups;
+  const username = http.session.get('username');
 
   function checkApiPermission() {
     return new Promise(function(resolve, reject) {
@@ -118,22 +117,36 @@ module.exports.checkPermission = function(http, type, options) {
     });
   }
 
+  function checkPackagePermission() {
+    return new Promise(function(resolve, reject) {
+      if ( type === 'package' ) {
+        _instance.getStorage().getBlacklist(username).then(function(blacklist) {
+          resolve(true); // FIXME
+        }).catch(function() {
+          reject('Access Denied!');
+        });
+      } else {
+        resolve();
+      }
+    });
+  }
+
   return new Promise(function(resolve, reject) {
-    _instance.getAuth().checkPermission(http, function(checkGroups) {
+    _instance.getAuth().checkPermission(http, type, options).then(function(checkGroups) {
       if ( typeof checkGroups === 'undefined' ) {
         checkGroups = true;
       }
 
       if ( checkGroups ) {
-        checkApiPermission().then(function() {
-          checkMountPermission().then(resolve).catch(reject);
+        checkApiPermission(checkGroups).then(function() {
+          checkMountPermission().then(function() {
+            checkPackagePermission().then(resolve).catch(reject);
+          }).catch(reject);
         }).catch(reject);
       } else {
         resolve();
       }
-
-      checkApiPermission(checkGroups, resolve, reject);
-    }, reject, type, options);
+    }).catch(reject);
   });
 }
 
@@ -146,9 +159,7 @@ module.exports.checkPermission = function(http, type, options) {
  * @memberof lib.auth
  */
 module.exports.checkSession = function(http) {
-  return new Promise(function(resolve, reject) {
-    _instance.getAuth().checkSession(http, resolve, reject);
-  });
+  return _instance.getAuth().checkSession(http);
 };
 
 /**

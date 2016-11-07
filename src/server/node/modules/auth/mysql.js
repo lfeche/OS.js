@@ -33,74 +33,86 @@ const _utils = require('./../../lib/utils.js');
 
 var pool;
 
-module.exports.login = function(http, resolve, reject) {
+module.exports.login = function(http) {
   const q = 'SELECT `id`, `username`, `name`, `groups`, `password` FROM `users` WHERE `username` = ? LIMIT 1;';
   const a = [http.data.username];
 
-  function _invalid() {
-    reject('Invalid credentials');
-  }
+  return new Promise(function(resolve, reject) {
+    function _invalid() {
+      reject('Invalid credentials');
+    }
 
-  function _login(row) {
-    var groups = [];
-    try {
-      groups = JSON.parse(row.groups);
-    } catch (e) {}
+    function _login(row) {
+      var groups = [];
+      try {
+        groups = JSON.parse(row.groups);
+      } catch (e) {}
 
-    resolve({
-      id: parseInt(row.id),
-      username: row.username,
-      name: row.name,
-      groups: groups
-    });
-  }
+      resolve({
+        id: parseInt(row.id),
+        username: row.username,
+        name: row.name,
+        groups: groups
+      });
+    }
 
-  function _auth(row) {
-    const hash = row.password.replace(/^\$2y(.+)$/i, '\$2a$1');
-    _bcrypt.compare(http.data.password, hash, function(err, res) {
+    function _auth(row) {
+      const hash = row.password.replace(/^\$2y(.+)$/i, '\$2a$1');
+      _bcrypt.compare(http.data.password, hash, function(err, res) {
+        if ( err ) {
+          reject(err);
+        } else if ( res === true ) {
+          _login(row);
+        } else {
+          _invalid();
+        }
+      });
+    }
+
+    _utils.mysqlQuery(pool, q, a, function(err, row, fields) {
       if ( err ) {
         reject(err);
-      } else if ( res === true ) {
-        _login(row);
-      } else {
+      } else if ( !row ) {
         _invalid();
+      } else {
+        _auth(row);
       }
-    });
-  }
+    }, true);
+  });
+};
 
-  _utils.mysqlQuery(pool, q, a, function(err, row, fields) {
-    if ( err ) {
-      reject(err);
-    } else if ( !row ) {
-      _invalid();
+module.exports.logout = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
+};
+
+module.exports.manage = function(http) {
+  return new Promise(function(resolve, reject) {
+    reject('Not available');
+  });
+};
+
+module.exports.initSession = function(http) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
+};
+
+module.exports.checkPermission = function(http, type, options) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
+};
+
+module.exports.checkSession = function(http) {
+  return new Promise(function(resolve, reject) {
+    if ( http.session.get('username') ) {
+      resolve();
     } else {
-      _auth(row);
+      reject('You have no OS.js Session, please log in!');
     }
-  }, true);
-};
-
-module.exports.logout = function(http, resolve, reject) {
-  resolve(true);
-};
-
-module.exports.manage = function(http, resolve, reject) {
-  reject('Not available');
-};
-
-module.exports.initSession = function(http, resolve, reject) {
-  resolve(true);
-};
-
-module.exports.checkPermission = function(http, resolve, reject, type, options) {
-  resolve(true);
-};
-
-module.exports.checkSession = function(http, resolve, reject) {
-  if ( http.session.get('username') ) {
-    resolve();
-  } else {
-    reject('You have no OS.js Session, please log in!');
-  }
+  });
 };
 
 module.exports.register = function(config) {

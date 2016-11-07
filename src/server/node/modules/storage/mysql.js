@@ -32,45 +32,51 @@ const _utils = require('./../../lib/utils.js');
 
 var pool;
 
-module.exports.setSettings = function(http, resolve, reject) {
-  const username = http.session.get('username');
-  const settings = JSON.stringify(http.data.settings);
-
-  _utils.mysqlQuery(pool, 'UPDATE `users` SET `settings` = ? WHERE `username` = ? LIMIT 1;', [settings, username], function(err, row) {
-    if ( err ) {
-      reject(err);
-    } else {
-      resolve(true);
-    }
+module.exports.setSettings = function(username, settings) {
+  return new Promise(function(resolve, reject) {
+    _utils.mysqlQuery(pool, 'UPDATE `users` SET `settings` = ? WHERE `username` = ? LIMIT 1;', [settings, username], function(err, row) {
+      if ( err ) {
+        reject(err);
+      } else {
+        resolve(true);
+      }
+    });
   });
 };
 
-module.exports.getSettings = function(http, resolve, reject) {
-  const username = http.session.get('username');
-  _utils.mysqlQuery(pool, 'SELECT `settings` FROM `users` WHERE `username` = ? LIMIT 1;', [username], function(err, row) {
-    row = row || {};
-    if ( err ) {
-      reject(err);
-    } else {
-      var json = {};
-      try {
-        json = JSON.parse(row.settings);
-      } catch (e) {}
-      resolve(json);
-    }
-  }, true);
+module.exports.getSettings = function(username) {
+  return new Promise(function(resolve, reject) {
+    _utils.mysqlQuery(pool, 'SELECT `settings` FROM `users` WHERE `username` = ? LIMIT 1;', [username], function(err, row) {
+      row = row || {};
+      if ( err ) {
+        reject(err);
+      } else {
+        var json = {};
+        try {
+          json = JSON.parse(row.settings);
+        } catch (e) {}
+        resolve(json);
+      }
+    }, true);
+  });
 };
 
-module.exports.getGroups = function(http, resolve, reject) {
-  resolve([]); // Unused in this case
+module.exports.getGroups = function(username) {
+  return new Promise(function(resolve) {
+    resolve([]); // Unused in this case
+  });
 };
 
-module.exports.getBlacklist = function(http, resolve, reject) {
-  resolve([]);
+module.exports.getBlacklist = function(username) {
+  return new Promise(function(resolve) {
+    resolve([]);
+  });
 };
 
-module.exports.setBlacklist = function(http, resolve, reject) {
-  resolve(true);
+module.exports.setBlacklist = function(username, list) {
+  return new Promise(function(resolve) {
+    resolve(true);
+  });
 };
 
 module.exports.register = function(config) {

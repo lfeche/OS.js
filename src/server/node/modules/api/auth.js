@@ -55,13 +55,8 @@ module.exports.login = function(http, resolve, reject) {
     http.session.set('username', userData.username);
     http.session.set('groups', JSON.stringify(userData.groups));
 
-    new Promise(function(res, rej) {
-      _instance.getStorage().getSettings(http, res, rej);
-    }).then(function(userSettings) {
-
-      new Promise(function(res, rej) {
-        _instance.getStorage().getBlacklist(http, res, rej);
-      }).then(function(blacklist) {
+    _instance.getStorage().getSettings(userData.username).then(function(userSettings) {
+      _instance.getStorage().getBlacklist(userData.username).then(function(blacklist) {
         http.session.set('username', userData.username);
         http.session.set('groups', JSON.stringify(userData.groups));
 
@@ -70,14 +65,12 @@ module.exports.login = function(http, resolve, reject) {
           userSettings: userSettings,
           blacklistedPackages: blacklist
         });
-      }).catch(_fail);
 
+      }).catch(_fail);
     }).catch(_fail);
   }
 
-  new Promise(function(res, rej) {
-    _instance.getAuth().login(http, res, rej);
-  }).then(function(userData) {
+  _instance.getAuth().login(http).then(function(userData) {
     if ( typeof userData.groups === 'undefined' ) {
       _instance.getStorage().getGroups(http, function(groups) {
         userData.groups = groups;
@@ -100,6 +93,6 @@ module.exports.login = function(http, resolve, reject) {
  * @memberof modules.api
  */
 module.exports.logout = function(http, resolve, reject) {
-  return _instance.getAuth().logout.apply(null, arguments);
+  return _instance.getAuth().logout(http).then(resolve).catch(reject);
 };
 

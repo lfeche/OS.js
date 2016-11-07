@@ -398,18 +398,14 @@ function request(http) {
       if ( skip ) {
         resolve();
       } else {
-        _osjs.auth.checkSession(http).then(function() {
-          resolve();
-        }).catch(_rejectResponse);
+        _osjs.auth.checkSession(http).then(resolve).catch(_rejectResponse);
       }
     }).then(function() {
       return new Promise(function(resolve, reject) {
         if ( skip ) {
           resolve();
         } else {
-          _osjs.auth.checkPermission(http, type, options).then(function() {
-            resolve();
-          }).catch(_rejectResponse);
+          _osjs.auth.checkPermission(http, type, options).then(resolve).catch(_rejectResponse);
         }
       });
     }).catch(_rejectResponse);
@@ -426,17 +422,13 @@ function request(http) {
     }
 
     _checkPermission('fs', {method: method, args: args}).then(function() {
-      (new Promise(function(resolve, reject) {
-        _osjs.vfs.request(http, method, args, resolve, reject);
-      })).then(_resolveResponse).catch(_rejectResponse);
+      _osjs.vfs.request(http, method, args).then(_resolveResponse).catch(_rejectResponse);
     }).catch(_rejectResponse);
   }
 
   function _apiCall() {
     _checkPermission('api', {method: http.endpoint}, http.data).then(function() {
-      (new Promise(function(resolve, reject) {
-        instance.API[http.endpoint](http, resolve, reject);
-      })).then(_resolveResponse).catch(_rejectResponse);
+      instance.API[http.endpoint](http, _resolveResponse, _rejectResponse);
     }).catch(_rejectResponse);
   }
 

@@ -28,12 +28,12 @@
  * @licence Simplified BSD License
  */
 
-/**
+/*
  * You can reach these methods via `instance.logger`
  * @namespace lib.logger
  */
 
-/**
+/*
  * Gets timestamp
  */
 function timestamp() {
@@ -41,7 +41,7 @@ function timestamp() {
   return now.toISOString();
 }
 
-/**
+/*
  * Create the logger instance
  *
  * Level -1 is everything, -2 is everything except verbose
@@ -58,7 +58,7 @@ module.exports.create = function createLogger(lvl) {
     VERBOSE: 8
   };
 
-  /**
+  /*
    * Check if this message can be logged according to level
    */
   function _check(lvl) {
@@ -78,7 +78,7 @@ module.exports.create = function createLogger(lvl) {
     return level !== 0;
   }
 
-  /**
+  /*
    * Logs given message
    */
   function _log(stamp, lvl/*, message[, message, ...]*/) {

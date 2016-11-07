@@ -8,7 +8,7 @@ const _fstream = require('fstream');
 // HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-/**
+/*
  * Create a read stream
  */
 function createReadStream(http, path) {
@@ -17,7 +17,7 @@ function createReadStream(http, path) {
   });
 }
 
-/**
+/*
  * Create a write stream
  */
 function createWriteStream(http, path) {
@@ -118,7 +118,7 @@ module.exports.createReadStream = createReadStream;
  */
 module.exports.createWriteStream = createWriteStream;
 
-/**
+/*
  * The name of your module
  */
 module.exports.name = 'EXAMPLE';

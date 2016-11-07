@@ -237,7 +237,7 @@ module.exports.getTransport = function(transportName) {
  *  .parseVirtualPath('home:///foo', {username: 'demo'})
  *
  * @return {Object}
- * @function getTransport
+ * @function parseVirtualPath
  * @memberof lib.vfs
  */
 module.exports.parseVirtualPath = function(query, options) {

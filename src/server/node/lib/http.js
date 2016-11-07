@@ -91,7 +91,7 @@ var proxyServer = null;
 // APIs
 ///////////////////////////////////////////////////////////////////////////////
 
-/**
+/*
  * Checks given request path and figures out if this is a configured proxy
  * address. If it was found, the normal server procedure is interrupted and
  * will perform a proxy request.
@@ -152,7 +152,7 @@ function proxyCall(instance, proxy, request, response) {
   return false;
 }
 
-/**
+/*
  * Creates a `ServerResponder` object for HTTP connections.
  * This allows you to respond with data in a certain format.
  */
@@ -225,7 +225,7 @@ function createHttpResponder(instance, response) {
   });
 }
 
-/**
+/*
  * Creates a `ServerResponder` object for WebSocket connections.
  * This allows you to respond with data in a certain format.
  */
@@ -264,7 +264,7 @@ function createWebsocketResponder(ws, index) {
   });
 }
 
-/**
+/*
  * Creates the `ServerRequest` object passed around.
  */
 function createHttpObject(request, response, path, data, responder, session_id, files) {
@@ -291,7 +291,7 @@ function createHttpObject(request, response, path, data, responder, session_id, 
   });
 }
 
-/**
+/*
  * Creates the HTTP, WebSocket and Proxy servers for OS.js
  */
 function createServer(instance, resolve, reject) {
@@ -391,7 +391,7 @@ function createServer(instance, resolve, reject) {
   });
 }
 
-/**
+/*
  * Destroys server
  */
 function destroyServer() {

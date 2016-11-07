@@ -39,7 +39,7 @@ const _vfs = require('./../../lib/vfs.js');
 // HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-/**
+/*
  * Create a read stream
  */
 function createReadStream(http, path) {
@@ -52,7 +52,7 @@ function createReadStream(http, path) {
   });
 }
 
-/**
+/*
  * Create a write stream
  */
 function createWriteStream(http, path) {
@@ -63,7 +63,7 @@ function createWriteStream(http, path) {
   });
 }
 
-/**
+/*
  * Reads EXIF data
  */
 function readExif(path, mime) {
@@ -89,7 +89,7 @@ function readExif(path, mime) {
   return new Promise(_read);
 }
 
-/**
+/*
  * Creates file information in a format OS.js understands
  */
 function createFileIter(query, real, iter, stat) {
@@ -127,7 +127,7 @@ function createFileIter(query, real, iter, stat) {
   };
 }
 
-/**
+/*
  * Check if given file exists or not
  */
 function existsWrapper(checkFound, real, resolve, reject) {
@@ -148,7 +148,7 @@ function existsWrapper(checkFound, real, resolve, reject) {
   });
 }
 
-/**
+/*
  * Reads a directory and returns in a format OS.js understands
  */
 function readDir(query, real, filter) {
@@ -418,7 +418,7 @@ const VFS = {
   fileinfo: function(http, args, resolve, reject) {
     const resolved = _vfs.parseVirtualPath(args.path, http);
 
-    existsWrapper(false, resolved.real, function() {
+    xistsWrapper(false, resolved.real, function() {
       const info = createFileIter(resolved.query, resolved.real, null);
       const mime = _vfs.getMime(resolved.real);
 
